@@ -29,12 +29,15 @@
         /* 卡片基础样式：保持 50px 超大间隔与 3px 粗边框 */
         .item { background: white; padding: 22px; border-radius: 14px; margin-bottom: 50px; position: relative; box-shadow: 0 6px 16px rgba(0,0,0,0.06); text-align: center; border: 3px solid transparent; }
         
-        /* === 【核心修改】文字信息全部改为居中，并放大字号 === */
         .item-info { text-align: center; border-bottom: 1px dashed #eee; margin-bottom: 15px; padding-bottom: 12px; }
-        .item-note { font-weight: bold; color: #111; font-size: 18px; } /* 备注放大到 18px */
-        .item-sub { font-size: 15px; color: #666; margin-top: 6px; font-weight: 500; } /* 重量/价格信息放大 */
-        .item-code { font-family: monospace; color: #000; font-size: 18px; font-weight: bold; margin-top: 10px; display: block; letter-spacing: 1px; } /* 条码数字放大并增加字间距 */
-        /* === 修改结束 === */
+        .item-note { font-weight: bold; color: #111; font-size: 18px; }
+        .item-sub { font-size: 15px; color: #666; margin-top: 6px; font-weight: 500; }
+        .item-code { font-family: monospace; color: #000; font-size: 18px; font-weight: bold; margin-top: 10px; display: block; letter-spacing: 1px; } 
+
+        /* 折扣控制区域样式 */
+        .discount-box { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; font-size: 14px; color: #444; background: #f8f9fa; padding: 8px; border-radius: 8px; }
+        .discount-box input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        .discount-box input[type="number"] { width: 65px; padding: 4px; text-align: center; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; }
 
         .btn-del { position: absolute; right: 12px; top: 15px; color: #dc3545; border: none; background: #ffe1e1; border-radius: 50%; width: 28px; height: 28px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         canvas { width: 100% !important; height: auto; margin-top: 12px; }
@@ -143,15 +146,37 @@
             return first12 + ck;
         }
 
+        // 核心逻辑：根据基础重量或价格，结合折扣计算最终嵌入条码的重量
+        // 原理：打折后收银机要收原价，意味着我们需要把条码里的克重“放大”相应的倍数（例如5.6折，实际克重 = 原重量 / 0.56）
+        function getComputedGrams(item, currentDiscount, isEnabled) {
+            let baseGrams = item.baseGrams;
+            if (isEnabled && currentDiscount > 0 && currentDiscount <= 10) {
+                // 折扣计算：比如5.6折代表乘以0.56。为了让顾客付最终的目标价，条码重量 = 原始重量 / (折扣 / 10)
+                let discountRate = currentDiscount / 10;
+                return Math.round(baseGrams / discountRate);
+            }
+            return baseGrams;
+        }
+
         function saveWeightCode() {
             let s = document.getElementById('w-sku').value;
-            let w = document.getElementById('w-weight').value;
+            let w = parseFloat(document.getElementById('w-weight').value);
             let n = document.getElementById('w-note').value || "未命名";
-            if (!s || !w) return alert("请输入货号和重量");
-            let code = calculateEAN13("7" + s.padStart(6, '0') + Math.round(w*1000).toString().padStart(5, '0'));
+            if (!s || isNaN(w)) return alert("请输入货号和重量");
             
+            let baseGrams = Math.round(w * 1000);
+
             let h = JSON.parse(localStorage.getItem('l_w') || '[]');
-            h.unshift({id: Date.now(), code: code, note: n, sub: `重量: ${w}kg`, color: getRandomColor() });
+            h.unshift({
+                id: Date.now(),
+                sku: s.padStart(6, '0'),
+                baseGrams: baseGrams,
+                originalWeightStr: w,
+                note: n,
+                color: getRandomColor(),
+                discountEnabled: false,
+                discountVal: 5.6 // 默认给个 5.6 的示例值[span_0](start_span)[span_0](end_span)
+            });
             localStorage.setItem('l_w', JSON.stringify(h));
             document.getElementById('w-weight').value = "";
             renderWeightList();
@@ -160,29 +185,62 @@
         function renderWeightList() {
             let h = JSON.parse(localStorage.getItem('l_w') || '[]');
             let l = document.getElementById('list-weight');
-            l.innerHTML = h.map(i => `<div class="item" style="border-color: ${i.color || '#ddd'}"><button class="btn-del" onclick="del('l_w',${i.id},'w')">×</button><div class="item-info"><div class="item-note">${i.note}</div><div class="item-sub">${i.sub}</div><span class="item-code">${i.code}</span></div><canvas id="cw-${i.id}"></canvas></div>`).join('');
-            h.forEach(i => JsBarcode(`#cw-${i.id}`, i.code, {format:"EAN13", width:2.5, height:70, displayValue:false}));
+            l.innerHTML = h.map(i => {
+                let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
+                let displayWeightKg = (curGrams / 1000).toFixed(3);
+                let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
+                
+                return `
+                <div class="item" style="border-color: ${i.color || '#ddd'}">
+                    <button class="btn-del" onclick="del('l_w',${i.id},'w')">×</button>
+                    <div class="discount-box">
+                        <label style="margin:0; cursor:pointer;"><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="toggleDiscount('l_w', ${i.id}, this.checked)"> 开启折扣</label>
+                        <span>折扣:</span>
+                        <input type="number" step="0.1" min="1" max="9.9" value="${i.discountVal}" onchange="updateDiscountVal('l_w', ${i.id}, this.value)">折
+                    </div>
+                    <div class="item-info">
+                        <div class="item-note">${i.note}</div>
+                        <div class="item-sub">原始重量: ${i.originalWeightStr} kg ${i.discountEnabled ? `(折后计费重量: ${displayWeightKg} kg)` : ''}</div>
+                        <span class="item-code">${code}</span>
+                    </div>
+                    <canvas id="cw-${i.id}"></canvas>
+                </div>`;
+            }).join('');
+            
+            h.forEach(i => {
+                let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
+                let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
+                JsBarcode(`#cw-${i.id}`, code, {format:"EAN13", width:2.5, height:70, displayValue:false});
+            });
         }
 
         function savePriceCode() {
             let s = document.getElementById('p-sku').value;
-            let u = document.getElementById('p-unit').value;
-            let t = document.getElementById('p-total').value;
+            let u = parseFloat(document.getElementById('p-unit').value);
+            let t = parseFloat(document.getElementById('p-total').value);
             let n = document.getElementById('p-note').value || "未命名";
-            if (!s || !u || !t) return alert("请完整输入");
+            if (!s || isNaN(u) || isNaN(t)) return alert("请完整输入");
             
-            let grams = Math.round((t / u) * 1000);
-            if (grams > 99999) return alert("重量超出限制");
+            let baseGrams = Math.round((t / u) * 1000);
+            if (baseGrams > 99999) return alert("重量超出限制");
             
             let sku = s.padStart(6, '0');
-            let code = calculateEAN13("7" + sku + grams.toString().padStart(5, '0'));
-            
             let map = JSON.parse(localStorage.getItem('sku_price_map') || '{}');
             map[sku] = u;
             localStorage.setItem('sku_price_map', JSON.stringify(map));
 
             let h = JSON.parse(localStorage.getItem('l_p') || '[]');
-            h.unshift({id: Date.now(), code: code, note: n, sub: `总价: ${t}元 (约${(grams/1000).toFixed(3)}kg)`, color: getRandomColor()});
+            h.unshift({
+                id: Date.now(),
+                sku: sku,
+                baseGrams: baseGrams,
+                totalPrice: t,
+                unitPrice: u,
+                note: n,
+                color: getRandomColor(),
+                discountEnabled: false,
+                discountVal: 5.6 // 默认给个 5.6 的示例值[span_1](start_span)[span_1](end_span)
+            });
             localStorage.setItem('l_p', JSON.stringify(h));
             document.getElementById('p-total').value = "";
             renderPriceList();
@@ -191,8 +249,55 @@
         function renderPriceList() {
             let h = JSON.parse(localStorage.getItem('l_p') || '[]');
             let l = document.getElementById('list-price');
-            l.innerHTML = h.map(i => `<div class="item" style="border-color: ${i.color || '#ddd'}"><button class="btn-del" onclick="del('l_p',${i.id},'p')">×</button><div class="item-info"><div class="item-note">${i.note}</div><div class="item-sub">${i.sub}</div><span class="item-code">${i.code}</span></div><canvas id="cp-${i.id}"></canvas></div>`).join('');
-            h.forEach(i => JsBarcode(`#cp-${i.id}`, i.code, {format:"EAN13", width:2.5, height:70, displayValue:false}));
+            l.innerHTML = h.map(i => {
+                let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
+                let displayWeightKg = (curGrams / 1000).toFixed(3);
+                let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
+                
+                return `
+                <div class="item" style="border-color: ${i.color || '#ddd'}">
+                    <button class="btn-del" onclick="del('l_p',${i.id},'p')">×</button>
+                    <div class="discount-box">
+                        <label style="margin:0; cursor:pointer;"><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="toggleDiscount('l_p', ${i.id}, this.checked)"> 开启折扣</label>
+                        <span>折扣:</span>
+                        <input type="number" step="0.1" min="1" max="9.9" value="${i.discountVal}" onchange="updateDiscountVal('l_p', ${i.id}, this.value)">折
+                    </div>
+                    <div class="item-info">
+                        <div class="item-note">${i.note}</div>
+                        <div class="item-sub">目标总价: ${i.totalPrice}元 ${i.discountEnabled ? `(折后结算重量: ${displayWeightKg}kg)` : `(约 ${(i.baseGrams/1000).toFixed(3)}kg)`}</div>
+                        <span class="item-code">${code}</span>
+                    </div>
+                    <canvas id="cp-${i.id}"></canvas>
+                </div>`;
+            }).join('');
+            
+            h.forEach(i => {
+                let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
+                let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
+                JsBarcode(`#cp-${i.id}`, code, {format:"EAN13", width:2.5, height:70, displayValue:false});
+            });
+        }
+
+        function toggleDiscount(key, id, isChecked) {
+            let h = JSON.parse(localStorage.getItem(key) || '[]');
+            let item = h.find(x => x.id === id);
+            if (item) {
+                item.discountEnabled = isChecked;
+                localStorage.setItem(key, JSON.stringify(h));
+                key === 'l_w' ? renderWeightList() : renderPriceList();
+            }
+        }
+
+        function updateDiscountVal(key, id, val) {
+            let num = parseFloat(val);
+            if (isNaN(num) || num <= 0 || num >= 10) return;
+            let h = JSON.parse(localStorage.getItem(key) || '[]');
+            let item = h.find(x => x.id === id);
+            if (item) {
+                item.discountVal = num;
+                localStorage.setItem(key, JSON.stringify(h));
+                key === 'l_w' ? renderWeightList() : renderPriceList();
+            }
         }
 
         function del(key, id, type) {
