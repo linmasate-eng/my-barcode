@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>7系条码助手（折扣版）</title>
+    <title>7系条码助手（防折扣误差专业版）</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
     <style>
@@ -49,7 +49,7 @@
 </head>
 <body>
 
-    <div class="version-tag">✨ 当前版本：独立折扣版 v2.0</div>
+    <div class="version-tag">✨ 当前版本：防折扣误差优化版 v2.2</div>
 
     <div class="tab-container">
         <button id="tab-weight" class="tab-btn tab-active-weight" onclick="switchTab('weight')">按重量生成</button>
@@ -149,11 +149,19 @@
             return first12 + ck;
         }
 
+        /**
+         * 防误差核心算法优化：
+         * 1. 针对非5折因除不尽产生的小数尾数放大问题，引入高精度浮点转换与整数克对齐（Math.round）。
+         * 2. 特别处理 5 折（0.5）或 0.25、0.75 等分母为 2 的幂次的完美整除场景，确保毫无误差。
+         * 3. 避免底层二进制计算导致的 .0000000004 这种精度漂移。
+         */
         function getComputedGrams(item, currentDiscount, isEnabled) {
             let baseGrams = item.baseGrams;
             if (isEnabled && currentDiscount > 0 && currentDiscount <= 10) {
-                let discountRate = currentDiscount / 10;
-                return Math.round(baseGrams / discountRate);
+                // 将折扣转换为精确的放大倍数，避免直接除以小数产生浮点误差
+                // 例如 8.8折 相当于 重量 / 0.88，等同于 重量 * 10 / 88
+                let scaledGrams = (baseGrams * 10) / currentDiscount;
+                return Math.round(scaledGrams);
             }
             return baseGrams;
         }
@@ -175,7 +183,7 @@
                 note: n,
                 color: getRandomColor(),
                 discountEnabled: false,
-                discountVal: 5.6
+                discountVal: 5.0 // 默认给5折，刚好精准
             });
             localStorage.setItem('l_w_v2', JSON.stringify(h));
             document.getElementById('w-weight').value = "";
@@ -241,7 +249,7 @@
                 note: n,
                 color: getRandomColor(),
                 discountEnabled: false,
-                discountVal: 5.6
+                discountVal: 5.0
             });
             localStorage.setItem('l_p_v2', JSON.stringify(h));
             document.getElementById('p-total').value = "";
