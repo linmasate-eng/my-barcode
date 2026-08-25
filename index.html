@@ -2,15 +2,13 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>7系条码助手（新海诚唯美风）</title>
+    <title>7系条码助手（自定义壁纸版）</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
     <style>
-        /* 新海诚唯美动画风：黄昏/星空渐变背景与通透光影 */
         :root { 
-            --primary: #4a6fa5;     /* 晨光深蓝 */
-            --secondary: #e07a5f;   /* 夕阳暖橙 */
-            --accent: #f4a261;      /* 琥珀光晕 */
+            --primary: #4a6fa5;     
+            --secondary: #e07a5f;   
             --glass-bg: rgba(255, 255, 255, 0.88);
             --glass-border: rgba(255, 255, 255, 0.6);
             --text-main: #2b2d42;
@@ -18,8 +16,10 @@
 
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            /* 新海诚式治愈渐变天空背景 */
+            /* 默认新海诚渐变背景，若上传了自定义图片会被 JS 动态覆盖 */
             background: linear-gradient(135deg, #2b3a67 0%, #4a6fa5 40%, #e07a5f 80%, #f4a261 100%);
+            background-size: cover;
+            background-position: center;
             background-attachment: fixed;
             min-height: 100vh;
             padding: 20px 15px 150px 15px; 
@@ -30,21 +30,41 @@
             color: var(--text-main);
         }
         
+        .top-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
         .version-tag { 
             background: rgba(255, 255, 255, 0.2); 
             backdrop-filter: blur(8px);
             color: #fff; 
-            padding: 6px 16px; 
+            padding: 6px 14px; 
             border-radius: 20px; 
             font-size: 12px; 
-            margin-bottom: 15px; 
             font-weight: 500; 
             letter-spacing: 1px;
             border: 1px solid rgba(255, 255, 255, 0.3);
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
-        /* 标签页切换：磨砂质感 */
+        /* 更换壁纸按钮 */
+        .bg-btn {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .bg-btn:hover { background: rgba(255, 255, 255, 0.35); }
+
         .tab-container { 
             display: flex; 
             width: 100%; 
@@ -71,7 +91,6 @@
         .tab-active-weight { background: #ffffff !important; color: var(--primary) !important; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .tab-active-price { background: #ffffff !important; color: var(--secondary) !important; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
-        /* 卡片容器：半透明毛玻璃效果 */
         .card { 
             background: var(--glass-bg); 
             backdrop-filter: blur(12px);
@@ -103,14 +122,12 @@
         
         .highlight-fill { background-color: #fff8f3 !important; border-color: var(--secondary) !important; }
 
-        /* 渐变按钮：带有夕阳与天空的唯美过渡 */
         button.btn-weight { 
             width: 100%; padding: 14px; 
             background: linear-gradient(135deg, #4a6fa5, #2b3a67); 
             color: white; border: none; border-radius: 14px; 
             font-size: 16px; font-weight: 600; cursor: pointer; 
             margin-top: 5px; box-shadow: 0 4px 15px rgba(74, 111, 165, 0.3);
-            transition: opacity 0.2s, transform 0.1s;
         }
         button.btn-weight:active { transform: scale(0.98); }
 
@@ -120,13 +137,11 @@
             color: white; border: none; border-radius: 14px; 
             font-size: 16px; font-weight: 600; cursor: pointer; 
             margin-top: 5px; box-shadow: 0 4px 15px rgba(224, 122, 95, 0.3);
-            transition: opacity 0.2s, transform 0.1s;
         }
         button.btn-price:active { transform: scale(0.98); }
         
         .history-list { width: 100%; max-width: 400px; margin-top: 25px; }
         
-        /* 结果条码卡片 */
         .item { 
             background: var(--glass-bg); 
             backdrop-filter: blur(12px);
@@ -144,7 +159,6 @@
         .item-sub { font-size: 14px; color: #666; margin-top: 6px; font-weight: 500; }
         .item-code { font-family: monospace; color: #111; font-size: 19px; font-weight: 700; margin-top: 10px; display: block; letter-spacing: 1.5px; } 
 
-        /* 折扣行 */
         .discount-box { 
             display: flex; align-items: center; justify-content: center; gap: 8px; 
             margin-bottom: 14px; font-size: 14px; color: #444; 
@@ -154,14 +168,11 @@
         .discount-box input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--secondary); }
         .discount-box input[type="number"] { width: 60px; padding: 4px; text-align: center; font-size: 14px; border: 1px solid #dcdde1; border-radius: 8px; background: #fff; }
 
-        /* 精致删除按钮 */
         .btn-del { 
             position: absolute; right: 14px; top: 14px; color: #e07a5f; border: none; 
             background: rgba(224, 122, 95, 0.1); border-radius: 50%; width: 30px; height: 30px; 
             font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; 
-            transition: background 0.2s;
         }
-        .btn-del:hover { background: rgba(224, 122, 95, 0.2); }
 
         canvas { width: 100% !important; height: auto; margin-top: 10px; background: #ffffff; border-radius: 12px; padding: 8px 0; box-shadow: inset 0 2px 6px rgba(0,0,0,0.03); }
         
@@ -171,7 +182,11 @@
 </head>
 <body>
 
-    <div class="version-tag">☁️ 7系条码助手 · 新海诚唯美风 v2.4</div>
+    <div class="top-bar">
+        <div class="version-tag">☁️ 条码助手 v2.5</div>
+        <button class="bg-btn" onclick="document.getElementById('bg-file').click()">🖼️ 更换壁纸</button>
+        <input type="file" id="bg-file" accept="image/*" style="display:none" onchange="changeBg(this)">
+    </div>
 
     <div class="tab-container">
         <button id="tab-weight" class="tab-btn tab-active-weight" onclick="switchTab('weight')">按重量生成</button>
@@ -226,12 +241,18 @@
 
     <script>
         window.onload = function() {
+            // 读取用户之前保存的自定义壁纸
+            let savedBg = localStorage.getItem('custom_bg_img');
+            if (savedBg) {
+                document.body.style.backgroundImage = `url(${savedBg})`;
+            }
+
             renderWeightList();
             renderPriceList();
             
             document.getElementById('p-sku').addEventListener('input', function() {
                 let sku = this.value.padStart(6, '0');
-                let map = JSON.parse(localStorage.getItem('sku_price_map_v4') || '{}');
+                let map = JSON.parse(localStorage.getItem('sku_price_map_v5') || '{}');
                 let unitInput = document.getElementById('p-unit');
                 if (map[sku]) {
                     unitInput.value = map[sku];
@@ -240,6 +261,19 @@
                 }
             });
         };
+
+        // 切换背景图片函数
+        function changeBg(input) {
+            if (input.files && input.files[0]) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    let base64Img = e.target.result;
+                    document.body.style.backgroundImage = `url(${base64Img})`;
+                    localStorage.setItem('custom_bg_img', base64Img);
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
 
         function switchTab(mode) {
             const sw = document.getElementById('section-weight');
@@ -265,7 +299,6 @@
             return first12 + ck;
         }
 
-        // 精准防误差核心算法
         function getComputedGrams(item, currentDiscount, isEnabled) {
             let baseGrams = item.baseGrams;
             if (isEnabled && currentDiscount > 0 && currentDiscount <= 10) {
@@ -283,7 +316,7 @@
             
             let baseGrams = Math.round(w * 1000);
 
-            let h = JSON.parse(localStorage.getItem('l_w_v4') || '[]');
+            let h = JSON.parse(localStorage.getItem('l_w_v5') || '[]');
             h.unshift({
                 id: Date.now(),
                 sku: s.padStart(6, '0'),
@@ -293,13 +326,13 @@
                 discountEnabled: false,
                 discountVal: 5.0
             });
-            localStorage.setItem('l_w_v4', JSON.stringify(h));
+            localStorage.setItem('l_w_v5', JSON.stringify(h));
             document.getElementById('w-weight').value = "";
             renderWeightList();
         }
 
         function renderWeightList() {
-            let h = JSON.parse(localStorage.getItem('l_w_v4') || '[]');
+            let h = JSON.parse(localStorage.getItem('l_w_v5') || '[]');
             let l = document.getElementById('list-weight');
             l.innerHTML = h.map(i => {
                 let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
@@ -308,11 +341,11 @@
                 
                 return `
                 <div class="item">
-                    <button class="btn-del" onclick="del('l_w_v4',${i.id},'w')">×</button>
+                    <button class="btn-del" onclick="del('l_w_v5',${i.id},'w')">×</button>
                     <div class="discount-box">
-                        <label style="margin:0; cursor:pointer;"><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="toggleDiscount('l_w_v4', ${i.id}, this.checked)"> 开启折扣</label>
+                        <label style="margin:0; cursor:pointer;"><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="toggleDiscount('l_w_v5', ${i.id}, this.checked)"> 开启折扣</label>
                         <span>折扣:</span>
-                        <input type="number" step="0.1" min="1" max="9.9" value="${i.discountVal}" onchange="updateDiscountVal('l_w_v4', ${i.id}, this.value)">折
+                        <input type="number" step="0.1" min="1" max="9.9" value="${i.discountVal}" onchange="updateDiscountVal('l_w_v5', ${i.id}, this.value)">折
                     </div>
                     <div class="item-info">
                         <div class="item-note">${i.note}</div>
@@ -343,11 +376,11 @@
             if (baseGrams > 99999) return alert("重量超出限制");
             
             let sku = s.padStart(6, '0');
-            let map = JSON.parse(localStorage.getItem('sku_price_map_v4') || '{}');
+            let map = JSON.parse(localStorage.getItem('sku_price_map_v5') || '{}');
             map[sku] = u;
-            localStorage.setItem('sku_price_map_v4', JSON.stringify(map));
+            localStorage.setItem('sku_price_map_v5', JSON.stringify(map));
 
-            let h = JSON.parse(localStorage.getItem('l_p_v4') || '[]');
+            let h = JSON.parse(localStorage.getItem('l_p_v5') || '[]');
             h.unshift({
                 id: Date.now(),
                 sku: sku,
@@ -358,13 +391,13 @@
                 discountEnabled: false,
                 discountVal: 5.0
             });
-            localStorage.setItem('l_p_v4', JSON.stringify(h));
+            localStorage.setItem('l_p_v5', JSON.stringify(h));
             document.getElementById('p-total').value = "";
             renderPriceList();
         }
 
         function renderPriceList() {
-            let h = JSON.parse(localStorage.getItem('l_p_v4') || '[]');
+            let h = JSON.parse(localStorage.getItem('l_p_v5') || '[]');
             let l = document.getElementById('list-price');
             l.innerHTML = h.map(i => {
                 let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
@@ -373,11 +406,11 @@
                 
                 return `
                 <div class="item">
-                    <button class="btn-del" onclick="del('l_p_v4',${i.id},'p')">×</button>
+                    <button class="btn-del" onclick="del('l_p_v5',${i.id},'p')">×</button>
                     <div class="discount-box">
-                        <label style="margin:0; cursor:pointer;"><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="toggleDiscount('l_p_v4', ${i.id}, this.checked)"> 开启折扣</label>
+                        <label style="margin:0; cursor:pointer;"><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="toggleDiscount('l_p_v5', ${i.id}, this.checked)"> 开启折扣</label>
                         <span>折扣:</span>
-                        <input type="number" step="0.1" min="1" max="9.9" value="${i.discountVal}" onchange="updateDiscountVal('l_p_v4', ${i.id}, this.value)">折
+                        <input type="number" step="0.1" min="1" max="9.9" value="${i.discountVal}" onchange="updateDiscountVal('l_p_v5', ${i.id}, this.value)">折
                     </div>
                     <div class="item-info">
                         <div class="item-note">${i.note}</div>
@@ -403,7 +436,7 @@
             if (item) {
                 item.discountEnabled = isChecked;
                 localStorage.setItem(key, JSON.stringify(h));
-                key === 'l_w_v4' ? renderWeightList() : renderPriceList();
+                key === 'l_w_v5' ? renderWeightList() : renderPriceList();
             }
         }
 
@@ -415,7 +448,7 @@
             if (item) {
                 item.discountVal = num;
                 localStorage.setItem(key, JSON.stringify(h));
-                key === 'l_w_v4' ? renderWeightList() : renderPriceList();
+                key === 'l_w_v5' ? renderWeightList() : renderPriceList();
             }
         }
 
