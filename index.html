@@ -2,20 +2,19 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>7系条码助手（森林森林质感版）</title>
+    <title>7系条码助手（半透明森林版）</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
     <style>
         :root { 
-            --primary: #4e8752;     /* 森林绿 */
-            --secondary: #d4a373;   /* 大地原木色 */
-            --card-bg: #1e3324;     /* 深绿实体面板色 */
-            --card-border: #2d4f37; /* 面板边框 */
-            --text-main: #e9edc9;   /* 浅叶绿主文字 */
-            --text-sub: #b7b7a4;    /* 辅助文字 */
+            --primary: #4e8752;     
+            --secondary: #d4a373;   
+            --card-bg: rgba(30, 51, 36, 0.75);     /* 半透明深绿面板 */
+            --card-border: rgba(255, 255, 255, 0.15); /* 半透明精致边框 */
+            --text-main: #e9edc9;   
+            --text-sub: #b7b7a4;    
         }
 
-        /* 独立固定的森林背景层 + 树叶纹理叠加 */
         #fixed-bg {
             position: fixed;
             top: 0;
@@ -29,12 +28,12 @@
             pointer-events: none;
         }
 
-        /* 森林叶片/自然材质底纹叠加层 */
+        /* 森林树叶纹理叠加层 */
         #fixed-bg::after {
             content: "";
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            opacity: 0.12;
+            opacity: 0.15;
             background-image: radial-gradient(#a3b18a 1px, transparent 1px), radial-gradient(#588157 1px, #0f1d13 1px);
             background-size: 40px 40px;
             background-position: 0 0, 20px 20px;
@@ -60,41 +59,44 @@
         }
 
         .version-tag { 
-            background: #172b1e; 
+            background: rgba(23, 43, 30, 0.7); 
             color: #d8f3dc; 
             padding: 6px 14px; 
             border-radius: 20px; 
             font-size: 12px; 
             font-weight: 500; 
             letter-spacing: 1px;
-            border: 1px solid #2d4f37;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
 
         .bg-btn {
-            background: #172b1e;
+            background: rgba(23, 43, 30, 0.7);
             color: #d8f3dc;
             padding: 6px 12px;
             border-radius: 20px;
             font-size: 12px;
             font-weight: 500;
-            border: 1px solid #2d4f37;
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(8px);
             cursor: pointer;
             transition: background 0.2s;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
-        .bg-btn:hover { background: #223f2a; }
+        .bg-btn:hover { background: rgba(34, 63, 42, 0.85); }
 
         .tab-container { 
             display: flex; 
             width: 100%; 
             max-width: 400px; 
             margin-bottom: 20px; 
-            background: #132217; 
+            background: rgba(19, 34, 23, 0.75); 
             border-radius: 16px; 
             padding: 4px;
-            border: 1px solid #284b30;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
         .tab-btn { 
             flex: 1; 
@@ -111,13 +113,15 @@
         .tab-active-weight { background: #4e8752 !important; color: #fff !important; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         .tab-active-price { background: #d4a373 !important; color: #1e3324 !important; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
 
-        /* 实体深绿森林面板卡片 */
+        /* 半透明毛玻璃卡片面板 */
         .card { 
             background: var(--card-bg); 
             padding: 24px; 
             border-radius: 24px; 
             border: 1px solid var(--card-border);
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
             width: 100%; 
             max-width: 400px; 
             box-sizing: border-box; 
@@ -129,18 +133,18 @@
         input { 
             width: 100%; 
             padding: 12px; 
-            border: 1px solid #2d4f37; 
+            border: 1px solid rgba(255, 255, 255, 0.15); 
             border-radius: 12px; 
             box-sizing: border-box; 
             font-size: 16px; 
             outline: none; 
-            background: #132217;
+            background: rgba(19, 34, 23, 0.6);
             color: #fff;
             transition: all 0.3s;
         }
-        input:focus { border-color: #588157; box-shadow: 0 0 0 3px rgba(88, 129, 87, 0.25); background: #182b1e; }
+        input:focus { border-color: #588157; box-shadow: 0 0 0 3px rgba(88, 129, 87, 0.25); background: rgba(24, 43, 30, 0.8); }
         
-        .highlight-fill { background-color: #382c1f !important; border-color: #d4a373 !important; }
+        .highlight-fill { background-color: rgba(56, 44, 31, 0.8) !important; border-color: #d4a373 !important; }
 
         button.btn-weight { 
             width: 100%; padding: 14px; 
@@ -162,7 +166,7 @@
         
         .history-list { width: 100%; max-width: 400px; margin-top: 25px; }
         
-        /* 历史生成的条码实体面板 */
+        /* 历史生成的条码半透明面板 */
         .item { 
             background: var(--card-bg); 
             padding: 24px; 
@@ -170,7 +174,9 @@
             margin-bottom: 25px; 
             position: relative; 
             border: 1px solid var(--card-border);
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
             text-align: center; 
         }
         
@@ -183,20 +189,20 @@
         .discount-box { 
             display: flex; align-items: center; justify-content: center; gap: 8px; 
             margin-bottom: 14px; font-size: 14px; color: #b7b7a4; 
-            background: #132217; padding: 8px 12px; border-radius: 12px; 
-            border: 1px solid #2d4f37; 
+            background: rgba(19, 34, 23, 0.6); padding: 8px 12px; border-radius: 12px; 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
         }
         .discount-box input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: #d4a373; }
-        .discount-box input[type="number"] { width: 60px; padding: 4px; text-align: center; font-size: 14px; border: 1px solid #2d4f37; border-radius: 8px; background: #1e3324; color: #fff; }
+        .discount-box input[type="number"] { width: 60px; padding: 4px; text-align: center; font-size: 14px; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; background: rgba(30, 51, 36, 0.8); color: #fff; }
 
         .btn-del { 
             position: absolute; right: 14px; top: 14px; color: #dda15e; border: none; 
-            background: #284b30; border-radius: 50%; width: 30px; height: 30px; 
+            background: rgba(40, 75, 48, 0.8); border-radius: 50%; width: 30px; height: 30px; 
             font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; 
             box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         }
 
-        /* 条码画布区域：白色实体底板，确保扫描仪清晰识别 */
+        /* 条码画布区域：保持纯白底板以确保红外扫描枪精准读取 */
         canvas { 
             width: 100% !important; 
             height: auto; 
@@ -213,11 +219,11 @@
 </head>
 <body>
 
-    <!-- 独立固定的森林渐变与树叶材质底层 -->
+    <!-- 森林渐变与树叶材质底层 -->
     <div id="fixed-bg"></div>
 
     <div class="top-bar">
-        <div class="version-tag">🌲 森林材质版 v3.0</div>
+        <div class="version-tag">🌲 半透明森林版 v3.1</div>
         <button class="bg-btn" onclick="document.getElementById('bg-file').click()">🖼️ 更换壁纸</button>
         <input type="file" id="bg-file" accept="image/*" style="display:none" onchange="changeBg(this)">
     </div>
@@ -275,7 +281,7 @@
 
     <script>
         window.onload = function() {
-            let savedBg = localStorage.getItem('custom_bg_img_forest');
+            let savedBg = localStorage.getItem('custom_bg_img_forest_trans');
             if (savedBg) {
                 document.getElementById('fixed-bg').style.backgroundImage = `url(${savedBg})`;
             }
@@ -301,7 +307,7 @@
                 reader.onload = function(e) {
                     let base64Img = e.target.result;
                     document.getElementById('fixed-bg').style.backgroundImage = `url(${base64Img})`;
-                    localStorage.setItem('custom_bg_img_forest', base64Img);
+                    localStorage.setItem('custom_bg_img_forest_trans', base64Img);
                 };
                 reader.readAsDataURL(input.files[0]);
             }
