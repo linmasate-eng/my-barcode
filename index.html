@@ -2,155 +2,168 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>7系条码助手（萌趣卡通版）</title>
+    <title>7系条码助手（新海诚唯美风）</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
     <style>
-        /* 动画卡通风专属配色与粗边框变量 */
+        /* 新海诚唯美动画风：黄昏/星空渐变背景与通透光影 */
         :root { 
-            --bg-color: #fffdf9;
-            --primary: #ff6b6b; /* 活力红粉 */
-            --secondary: #4ecdc4; /* 薄荷绿 */
-            --accent: #ffe66d; /* 柠檬黄 */
-            --dark: #2d3436;
-            --border: 3px solid #2d3436;
-            --shadow: 4px 4px 0px #2d3436;
-            --shadow-sm: 2px 2px 0px #2d3436;
+            --primary: #4a6fa5;     /* 晨光深蓝 */
+            --secondary: #e07a5f;   /* 夕阳暖橙 */
+            --accent: #f4a261;      /* 琥珀光晕 */
+            --glass-bg: rgba(255, 255, 255, 0.88);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --text-main: #2b2d42;
         }
 
         body { 
-            font-family: "Comic Sans MS", "Chalkboard SE", -apple-system, sans-serif; 
-            background: var(--bg-color); 
-            background-image: radial-gradient(#dfe6e9 15%, transparent 16%), radial-gradient(#dfe6e9 15%, transparent 16%);
-            background-size: 20px 20px;
-            background-position: 0 0, 10px 10px;
-            padding: 15px 15px 150px 15px; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            /* 新海诚式治愈渐变天空背景 */
+            background: linear-gradient(135deg, #2b3a67 0%, #4a6fa5 40%, #e07a5f 80%, #f4a261 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            padding: 20px 15px 150px 15px; 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
             margin: 0; 
-            color: var(--dark);
+            color: var(--text-main);
         }
         
         .version-tag { 
-            background: var(--accent); 
-            color: var(--dark); 
+            background: rgba(255, 255, 255, 0.2); 
+            backdrop-filter: blur(8px);
+            color: #fff; 
             padding: 6px 16px; 
             border-radius: 20px; 
-            font-size: 13px; 
+            font-size: 12px; 
             margin-bottom: 15px; 
-            font-weight: 900; 
-            border: var(--border);
-            box-shadow: var(--shadow-sm);
-            transform: rotate(-1deg);
+            font-weight: 500; 
+            letter-spacing: 1px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
-        /* 标签页切换 */
-        .tab-container { display: flex; width: 100%; max-width: 400px; margin-bottom: 20px; gap: 10px; }
+        /* 标签页切换：磨砂质感 */
+        .tab-container { 
+            display: flex; 
+            width: 100%; 
+            max-width: 400px; 
+            margin-bottom: 20px; 
+            background: rgba(255, 255, 255, 0.2); 
+            backdrop-filter: blur(10px);
+            border-radius: 16px; 
+            padding: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
         .tab-btn { 
             flex: 1; 
             padding: 12px; 
-            border: var(--border); 
-            border-radius: 16px; 
+            border: none; 
+            border-radius: 12px; 
             font-size: 15px; 
-            font-weight: 900; 
+            font-weight: 600; 
             cursor: pointer; 
-            background: white; 
-            color: var(--dark); 
-            box-shadow: var(--shadow);
-            transition: transform 0.1s, box-shadow 0.1s;
+            color: #fff; 
+            background: transparent; 
+            transition: all 0.3s ease;
         }
-        .tab-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #2d3436; }
-        .tab-active-weight { background: var(--primary); color: white; }
-        .tab-active-price { background: var(--secondary); color: var(--dark); }
+        .tab-active-weight { background: #ffffff !important; color: var(--primary) !important; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .tab-active-price { background: #ffffff !important; color: var(--secondary) !important; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
-        /* 卡片容器：厚边框加硬阴影，漫画立体感 */
+        /* 卡片容器：半透明毛玻璃效果 */
         .card { 
-            background: white; 
-            padding: 22px; 
-            border-radius: 20px; 
-            border: var(--border);
-            box-shadow: var(--shadow);
+            background: var(--glass-bg); 
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 24px; 
+            border-radius: 24px; 
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
             width: 100%; 
             max-width: 400px; 
             box-sizing: border-box; 
         }
 
         .input-group { margin-bottom: 14px; text-align: left; }
-        label { font-size: 13px; font-weight: 900; color: var(--dark); display: block; margin-bottom: 5px; }
+        label { font-size: 13px; font-weight: 600; color: #555; display: block; margin-bottom: 5px; }
         
         input { 
             width: 100%; 
             padding: 12px; 
-            border: var(--border); 
+            border: 1px solid #dcdde1; 
             border-radius: 12px; 
             box-sizing: border-box; 
             font-size: 16px; 
             outline: none; 
-            background: #fff;
-            font-weight: bold;
-            box-shadow: inset 2px 2px 0px rgba(0,0,0,0.05);
+            background: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s;
         }
-        input:focus { background: #fffaf0; }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.15); background: #fff; }
         
-        .highlight-fill { background-color: #fff9db !important; border-color: var(--primary) !important; }
+        .highlight-fill { background-color: #fff8f3 !important; border-color: var(--secondary) !important; }
 
-        /* 卡通风格大按钮 */
+        /* 渐变按钮：带有夕阳与天空的唯美过渡 */
         button.btn-weight { 
-            width: 100%; padding: 14px; background: var(--primary); color: white; 
-            border: var(--border); border-radius: 14px; font-size: 16px; font-weight: 900; 
-            cursor: pointer; margin-top: 5px; box-shadow: var(--shadow);
-            transition: transform 0.1s, box-shadow 0.1s;
+            width: 100%; padding: 14px; 
+            background: linear-gradient(135deg, #4a6fa5, #2b3a67); 
+            color: white; border: none; border-radius: 14px; 
+            font-size: 16px; font-weight: 600; cursor: pointer; 
+            margin-top: 5px; box-shadow: 0 4px 15px rgba(74, 111, 165, 0.3);
+            transition: opacity 0.2s, transform 0.1s;
         }
-        button.btn-weight:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #2d3436; }
+        button.btn-weight:active { transform: scale(0.98); }
 
         button.btn-price { 
-            width: 100%; padding: 14px; background: var(--secondary); color: var(--dark); 
-            border: var(--border); border-radius: 14px; font-size: 16px; font-weight: 900; 
-            cursor: pointer; margin-top: 5px; box-shadow: var(--shadow);
-            transition: transform 0.1s, box-shadow 0.1s;
+            width: 100%; padding: 14px; 
+            background: linear-gradient(135deg, #e07a5f, #f4a261); 
+            color: white; border: none; border-radius: 14px; 
+            font-size: 16px; font-weight: 600; cursor: pointer; 
+            margin-top: 5px; box-shadow: 0 4px 15px rgba(224, 122, 95, 0.3);
+            transition: opacity 0.2s, transform 0.1s;
         }
-        button.btn-price:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #2d3436; }
+        button.btn-price:active { transform: scale(0.98); }
         
         .history-list { width: 100%; max-width: 400px; margin-top: 25px; }
         
         /* 结果条码卡片 */
         .item { 
-            background: white; 
-            padding: 22px; 
-            border-radius: 20px; 
-            margin-bottom: 30px; 
+            background: var(--glass-bg); 
+            backdrop-filter: blur(12px);
+            padding: 24px; 
+            border-radius: 24px; 
+            margin-bottom: 25px; 
             position: relative; 
-            border: var(--border);
-            box-shadow: var(--shadow);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
             text-align: center; 
         }
         
-        .item-info { text-align: center; border-bottom: 2px dashed #dfe6e9; margin-bottom: 12px; padding-bottom: 12px; }
-        .item-note { font-weight: 900; color: var(--dark); font-size: 20px; }
-        .item-sub { font-size: 14px; color: #636e72; margin-top: 6px; font-weight: bold; }
-        .item-code { font-family: monospace; color: var(--dark); font-size: 20px; font-weight: 900; margin-top: 10px; display: block; letter-spacing: 2px; } 
+        .item-info { text-align: center; border-bottom: 1px dashed rgba(0,0,0,0.1); margin-bottom: 15px; padding-bottom: 12px; }
+        .item-note { font-weight: 700; color: var(--text-main); font-size: 18px; }
+        .item-sub { font-size: 14px; color: #666; margin-top: 6px; font-weight: 500; }
+        .item-code { font-family: monospace; color: #111; font-size: 19px; font-weight: 700; margin-top: 10px; display: block; letter-spacing: 1.5px; } 
 
         /* 折扣行 */
         .discount-box { 
             display: flex; align-items: center; justify-content: center; gap: 8px; 
-            margin-bottom: 12px; font-size: 14px; font-weight: bold; color: var(--dark); 
-            background: #f1f2f6; padding: 8px; border-radius: 12px; border: 2px solid var(--dark); 
+            margin-bottom: 14px; font-size: 14px; color: #444; 
+            background: rgba(255, 255, 255, 0.6); padding: 8px 12px; border-radius: 12px; 
+            border: 1px solid rgba(0,0,0,0.05); 
         }
-        .discount-box input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary); }
-        .discount-box input[type="number"] { width: 60px; padding: 4px; text-align: center; font-size: 14px; border: 2px solid var(--dark); border-radius: 8px; box-shadow: none; }
+        .discount-box input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--secondary); }
+        .discount-box input[type="number"] { width: 60px; padding: 4px; text-align: center; font-size: 14px; border: 1px solid #dcdde1; border-radius: 8px; background: #fff; }
 
-        /* 卡通红叉删除按钮 */
+        /* 精致删除按钮 */
         .btn-del { 
-            position: absolute; right: 12px; top: 12px; color: white; border: var(--border); 
-            background: #ff7675; border-radius: 50%; width: 32px; height: 32px; font-size: 18px; 
-            font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; 
-            box-shadow: var(--shadow-sm);
-            transition: transform 0.1s;
+            position: absolute; right: 14px; top: 14px; color: #e07a5f; border: none; 
+            background: rgba(224, 122, 95, 0.1); border-radius: 50%; width: 30px; height: 30px; 
+            font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; 
+            transition: background 0.2s;
         }
-        .btn-del:active { transform: scale(0.9); }
+        .btn-del:hover { background: rgba(224, 122, 95, 0.2); }
 
-        canvas { width: 100% !important; height: auto; margin-top: 10px; background: white; border-radius: 8px; }
+        canvas { width: 100% !important; height: auto; margin-top: 10px; background: #ffffff; border-radius: 12px; padding: 8px 0; box-shadow: inset 0 2px 6px rgba(0,0,0,0.03); }
         
         #section-weight { display: flex; flex-direction: column; align-items: center; width: 100%; }
         #section-price { display: none; flex-direction: column; align-items: center; width: 100%; }
@@ -158,16 +171,16 @@
 </head>
 <body>
 
-    <div class="version-tag">🎨 萌趣卡通防误差版 v2.3</div>
+    <div class="version-tag">☁️ 7系条码助手 · 新海诚唯美风 v2.4</div>
 
     <div class="tab-container">
-        <button id="tab-weight" class="tab-btn tab-active-weight" onclick="switchTab('weight')">⚖️ 按重量生成</button>
-        <button id="tab-price" class="tab-btn" onclick="switchTab('price')">💰 按价格反推</button>
+        <button id="tab-weight" class="tab-btn tab-active-weight" onclick="switchTab('weight')">按重量生成</button>
+        <button id="tab-price" class="tab-btn" onclick="switchTab('price')">按价格反推</button>
     </div>
 
     <div id="section-weight">
         <div class="card">
-            <h2 style="margin:0 0 15px 0; color:var(--primary); font-size:20px; text-align: center; font-weight:900;">✨ 录入重量生成条码 ✨</h2>
+            <h2 style="margin:0 0 15px 0; color:#2b3a67; font-size:18px; text-align: center; font-weight:700;">录入重量生成条码</h2>
             <div class="input-group">
                 <label>货号</label>
                 <input type="tel" id="w-sku" placeholder="如: 16">
@@ -180,14 +193,14 @@
                 <label>备注</label>
                 <input type="text" id="w-note" placeholder="如: 青瓜">
             </div>
-            <button class="btn-weight" onclick="saveWeightCode()">🚀 生成并保存</button>
+            <button class="btn-weight" onclick="saveWeightCode()">生成并保存</button>
         </div>
         <div id="list-weight" class="history-list"></div>
     </div>
 
     <div id="section-price">
         <div class="card">
-            <h2 style="margin:0 0 15px 0; color:#00b894; font-size:20px; text-align: center; font-weight:900;">🎯 输入价格反推重量 🎯</h2>
+            <h2 style="margin:0 0 15px 0; color:#e07a5f; font-size:18px; text-align: center; font-weight:700;">输入价格反推重量</h2>
             <div class="input-group">
                 <label>货号 (自动填单价)</label>
                 <input type="tel" id="p-sku" placeholder="输入货号">
@@ -206,30 +219,24 @@
                 <label>备注</label>
                 <input type="text" id="p-note" placeholder="备注">
             </div>
-            <button class="btn-price" onclick="savePriceCode()">✨ 换算并生成</button>
+            <button class="btn-price" onclick="savePriceCode()">换算并生成</button>
         </div>
         <div id="list-price" class="history-list"></div>
     </div>
 
     <script>
-        const cardColors = ['#ff6b6b', '#4ecdc4', '#ffe66d', '#ff9f43', '#54a0ff', '#5f27cd'];
-
-        function getRandomColor() {
-            return cardColors[Math.floor(Math.random() * cardColors.length)];
-        }
-
         window.onload = function() {
             renderWeightList();
             renderPriceList();
             
             document.getElementById('p-sku').addEventListener('input', function() {
                 let sku = this.value.padStart(6, '0');
-                let map = JSON.parse(localStorage.getItem('sku_price_map_v3') || '{}');
+                let map = JSON.parse(localStorage.getItem('sku_price_map_v4') || '{}');
                 let unitInput = document.getElementById('p-unit');
                 if (map[sku]) {
                     unitInput.value = map[sku];
                     unitInput.classList.add('highlight-fill');
-                    setTimeout(() => unitInput.classList.remove('highlight-fill'), 500);
+                    setTimeout(() => unitInput.classList.remove('highlight-fill'), 600);
                 }
             });
         };
@@ -258,7 +265,7 @@
             return first12 + ck;
         }
 
-        // 防折扣误差精准计算核心
+        // 精准防误差核心算法
         function getComputedGrams(item, currentDiscount, isEnabled) {
             let baseGrams = item.baseGrams;
             if (isEnabled && currentDiscount > 0 && currentDiscount <= 10) {
@@ -276,24 +283,23 @@
             
             let baseGrams = Math.round(w * 1000);
 
-            let h = JSON.parse(localStorage.getItem('l_w_v3') || '[]');
+            let h = JSON.parse(localStorage.getItem('l_w_v4') || '[]');
             h.unshift({
                 id: Date.now(),
                 sku: s.padStart(6, '0'),
                 baseGrams: baseGrams,
                 originalWeightStr: w,
                 note: n,
-                color: getRandomColor(),
                 discountEnabled: false,
                 discountVal: 5.0
             });
-            localStorage.setItem('l_w_v3', JSON.stringify(h));
+            localStorage.setItem('l_w_v4', JSON.stringify(h));
             document.getElementById('w-weight').value = "";
             renderWeightList();
         }
 
         function renderWeightList() {
-            let h = JSON.parse(localStorage.getItem('l_w_v3') || '[]');
+            let h = JSON.parse(localStorage.getItem('l_w_v4') || '[]');
             let l = document.getElementById('list-weight');
             l.innerHTML = h.map(i => {
                 let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
@@ -302,15 +308,15 @@
                 
                 return `
                 <div class="item">
-                    <button class="btn-del" onclick="del('l_w_v3',${i.id},'w')">×</button>
+                    <button class="btn-del" onclick="del('l_w_v4',${i.id},'w')">×</button>
                     <div class="discount-box">
-                        <label style="margin:0; cursor:pointer;"><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="toggleDiscount('l_w_v3', ${i.id}, this.checked)"> 开启折扣</label>
+                        <label style="margin:0; cursor:pointer;"><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="toggleDiscount('l_w_v4', ${i.id}, this.checked)"> 开启折扣</label>
                         <span>折扣:</span>
-                        <input type="number" step="0.1" min="1" max="9.9" value="${i.discountVal}" onchange="updateDiscountVal('l_w_v3', ${i.id}, this.value)">折
+                        <input type="number" step="0.1" min="1" max="9.9" value="${i.discountVal}" onchange="updateDiscountVal('l_w_v4', ${i.id}, this.value)">折
                     </div>
                     <div class="item-info">
-                        <div class="item-note">🏷️ ${i.note}</div>
-                        <div class="item-sub">原始重量: ${i.originalWeightStr} kg ${i.discountEnabled ? `<br>✨ 折后计费重量: <b>${displayWeightKg} kg</b>` : ''}</div>
+                        <div class="item-note">${i.note}</div>
+                        <div class="item-sub">原始重量: ${i.originalWeightStr} kg ${i.discountEnabled ? `<br>✨ 折后计费重: <b>${displayWeightKg} kg</b>` : ''}</div>
                         <span class="item-code">${code}</span>
                     </div>
                     <canvas id="cw-${i.id}"></canvas>
@@ -337,11 +343,11 @@
             if (baseGrams > 99999) return alert("重量超出限制");
             
             let sku = s.padStart(6, '0');
-            let map = JSON.parse(localStorage.getItem('sku_price_map_v3') || '{}');
+            let map = JSON.parse(localStorage.getItem('sku_price_map_v4') || '{}');
             map[sku] = u;
-            localStorage.setItem('sku_price_map_v3', JSON.stringify(map));
+            localStorage.setItem('sku_price_map_v4', JSON.stringify(map));
 
-            let h = JSON.parse(localStorage.getItem('l_p_v3') || '[]');
+            let h = JSON.parse(localStorage.getItem('l_p_v4') || '[]');
             h.unshift({
                 id: Date.now(),
                 sku: sku,
@@ -349,17 +355,16 @@
                 totalPrice: t,
                 unitPrice: u,
                 note: n,
-                color: getRandomColor(),
                 discountEnabled: false,
                 discountVal: 5.0
             });
-            localStorage.setItem('l_p_v3', JSON.stringify(h));
+            localStorage.setItem('l_p_v4', JSON.stringify(h));
             document.getElementById('p-total').value = "";
             renderPriceList();
         }
 
         function renderPriceList() {
-            let h = JSON.parse(localStorage.getItem('l_p_v3') || '[]');
+            let h = JSON.parse(localStorage.getItem('l_p_v4') || '[]');
             let l = document.getElementById('list-price');
             l.innerHTML = h.map(i => {
                 let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
@@ -368,15 +373,15 @@
                 
                 return `
                 <div class="item">
-                    <button class="btn-del" onclick="del('l_p_v3',${i.id},'p')">×</button>
+                    <button class="btn-del" onclick="del('l_p_v4',${i.id},'p')">×</button>
                     <div class="discount-box">
-                        <label style="margin:0; cursor:pointer;"><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="toggleDiscount('l_p_v3', ${i.id}, this.checked)"> 开启折扣</label>
+                        <label style="margin:0; cursor:pointer;"><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="toggleDiscount('l_p_v4', ${i.id}, this.checked)"> 开启折扣</label>
                         <span>折扣:</span>
-                        <input type="number" step="0.1" min="1" max="9.9" value="${i.discountVal}" onchange="updateDiscountVal('l_p_v3', ${i.id}, this.value)">折
+                        <input type="number" step="0.1" min="1" max="9.9" value="${i.discountVal}" onchange="updateDiscountVal('l_p_v4', ${i.id}, this.value)">折
                     </div>
                     <div class="item-info">
-                        <div class="item-note">🏷️ ${i.note}</div>
-                        <div class="item-sub">目标总价: ${i.totalPrice}元 ${i.discountEnabled ? `<br>✨ 折后结算重量: <b>${displayWeightKg}kg</b>` : `(约 ${(i.baseGrams/1000).toFixed(3)}kg)`}</div>
+                        <div class="item-note">${i.note}</div>
+                        <div class="item-sub">目标总价: ${i.totalPrice}元 ${i.discountEnabled ? `<br>✨ 折后结算重: <b>${displayWeightKg}kg</b>` : `(约 ${(i.baseGrams/1000).toFixed(3)}kg)`}</div>
                         <span class="item-code">${code}</span>
                     </div>
                     <canvas id="cp-${i.id}"></canvas>
@@ -398,7 +403,7 @@
             if (item) {
                 item.discountEnabled = isChecked;
                 localStorage.setItem(key, JSON.stringify(h));
-                key === 'l_w_v3' ? renderWeightList() : renderPriceList();
+                key === 'l_w_v4' ? renderWeightList() : renderPriceList();
             }
         }
 
@@ -410,7 +415,7 @@
             if (item) {
                 item.discountVal = num;
                 localStorage.setItem(key, JSON.stringify(h));
-                key === 'l_w_v3' ? renderWeightList() : renderPriceList();
+                key === 'l_w_v4' ? renderWeightList() : renderPriceList();
             }
         }
 
