@@ -2,166 +2,312 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>会员码生成助手(防误差精准版)</title>
+    <title>7系条码助手（折扣版）</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- 更换为更稳定的 cdnjs 官方库 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; padding: 15px; display: flex; flex-direction: column; align-items: center; margin: 0; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; box-sizing: border-box; }
-        h2 { margin: 0 0 15px 0; color: #007bff; font-size: 18px; text-align: center; }
+        /* 折扣版专属配色：更偏向科技感深蓝与活力紫 */
+        :root { --primary: #3f51b5; --secondary: #9c27b0; }
+        body { font-family: -apple-system, sans-serif; background: #f4f6f9; padding: 15px 15px 150px 15px; display: flex; flex-direction: column; align-items: center; margin: 0; }
         
-        textarea, input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; font-family: inherit; }
-        textarea { resize: none; height: 120px; }
-        
-        button.add-btn { width: 100%; padding: 14px; background: #007bff; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        button.add-btn:active { background: #0056b3; }
+        .version-tag { background: linear-gradient(135deg, #3f51b5, #9c27b0); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; margin-bottom: 12px; font-weight: bold; letter-spacing: 1px; }
 
-        button.clear-btn { width: 100%; padding: 10px; background: #dc3545; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 8px; }
-        button.clear-btn:active { background: #bd2130; }
+        .tab-container { display: flex; width: 100%; max-width: 400px; margin-bottom: 15px; background: #e9ecef; border-radius: 10px; overflow: hidden; }
+        .tab-btn { flex: 1; padding: 12px; border: none; font-size: 15px; font-weight: bold; cursor: pointer; color: #555; background: transparent; transition: 0.3s; }
+        .tab-active-weight { background: var(--primary); color: white; }
+        .tab-active-price { background: var(--secondary); color: white; }
+
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; box-sizing: border-box; }
+        .input-group { margin-bottom: 12px; text-align: left; }
+        label { font-size: 13px; color: #666; display: block; margin-bottom: 4px; }
+        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; }
         
-        .history-list { width: 100%; max-width: 400px; margin-top: 20px; }
-        .item { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center; cursor: pointer; transition: background 0.2s; border: 2px solid transparent; }
-        .item:active { background: #f8f9fa; border-color: #007bff; }
+        .highlight-fill { background-color: #f3e8f8 !important; border-color: var(--secondary) !important; transition: 0.3s; }
+
+        button.btn-weight { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        button.btn-price { width: 100%; padding: 14px; background: var(--secondary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 5px; }
         
-        .item-info { text-align: left; border-bottom: 1px dashed #eee; margin-bottom: 10px; padding-bottom: 8px; padding-right: 30px; display: flex; flex-direction: column; gap: 5px; }
+        .history-list { width: 100%; max-width: 400px; margin-top: 30px; }
         
-        .serial-badge { display: inline-block; background: #007bff; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 6px; vertical-align: middle; }
+        .item { background: white; padding: 22px; border-radius: 14px; margin-bottom: 50px; position: relative; box-shadow: 0 6px 16px rgba(0,0,0,0.06); text-align: center; border: 3px solid transparent; }
         
-        .item-note { font-weight: bold; color: #333; font-size: 16px; }
-        .item-phone { color: #007bff; font-family: monospace; font-size: 16px; font-weight: bold; }
-        .scan-progress { font-size: 12px; color: #e65100; font-weight: bold; margin-top: 2px; }
+        .item-info { text-align: center; border-bottom: 1px dashed #eee; margin-bottom: 15px; padding-bottom: 12px; }
+        .item-note { font-weight: bold; color: #111; font-size: 18px; }
+        .item-sub { font-size: 15px; color: #666; margin-top: 6px; font-weight: 500; }
+        .item-code { font-family: monospace; color: #000; font-size: 18px; font-weight: bold; margin-top: 10px; display: block; letter-spacing: 1px; } 
+
+        .discount-box { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; font-size: 14px; color: #444; background: #f8f9fa; padding: 8px; border-radius: 8px; border: 1px dashed #ccc; }
+        .discount-box input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        .discount-box input[type="number"] { width: 65px; padding: 4px; text-align: center; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; }
+
+        .btn-del { position: absolute; right: 12px; top: 15px; color: #dc3545; border: none; background: #ffe1e1; border-radius: 50%; width: 28px; height: 28px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        canvas { width: 100% !important; height: auto; margin-top: 12px; }
         
-        .btn-del { position: absolute; right: 10px; top: 15px; color: #dc3545; border: none; background: #ffe1e1; border-radius: 50%; width: 28px; height: 28px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2; }
-        
-        .qr-box { display: flex; justify-content: center; margin-top: 10px; }
-        .qr-box img, .qr-box canvas { padding: 5px; background: #fff; border: 1px solid #eee; display: block; }
+        #section-weight { display: flex; flex-direction: column; align-items: center; width: 100%; }
+        #section-price { display: none; flex-direction: column; align-items: center; width: 100%; }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h2>会员二维码生成 (防误差自动版)</h2>
-        <textarea id="phone" placeholder="输入会员手机号，多个号码请换行&#10;例如：&#10;13800000001&#10;13800000002"></textarea>
-        <input type="text" id="note" placeholder="统一备注 (选填，如：VIP批次)">
-        <button class="add-btn" onclick="saveAndRender()">生成并保存</button>
-        <button class="clear-btn" onclick="clearAllItems()">一键清除所有会员</button>
+    <div class="version-tag">✨ 当前版本：独立折扣版 v2.0</div>
+
+    <div class="tab-container">
+        <button id="tab-weight" class="tab-btn tab-active-weight" onclick="switchTab('weight')">按重量生成</button>
+        <button id="tab-price" class="tab-btn" onclick="switchTab('price')">按价格反推</button>
     </div>
 
-    <div id="list" class="history-list"></div>
+    <div id="section-weight">
+        <div class="card">
+            <h2 style="margin:0 0 15px 0; color:var(--primary); font-size:18px; text-align: center;">录入重量生成条码</h2>
+            <div class="input-group">
+                <label>货号</label>
+                <input type="tel" id="w-sku" placeholder="如: 16">
+            </div>
+            <div class="input-group">
+                <label>重量 (kg)</label>
+                <input type="number" id="w-weight" step="0.001" placeholder="如: 0.525">
+            </div>
+            <div class="input-group">
+                <label>备注</label>
+                <input type="text" id="w-note" placeholder="如: 青瓜">
+            </div>
+            <button class="btn-weight" onclick="saveWeightCode()">生成并保存</button>
+        </div>
+        <div id="list-weight" class="history-list"></div>
+    </div>
+
+    <div id="section-price">
+        <div class="card">
+            <h2 style="margin:0 0 15px 0; color:var(--secondary); font-size:18px; text-align: center;">输入价格反推重量</h2>
+            <div class="input-group">
+                <label>货号 (自动填单价)</label>
+                <input type="tel" id="p-sku" placeholder="输入货号">
+            </div>
+            <div style="display:flex; gap:10px;">
+                <div class="input-group" style="flex:1;">
+                    <label>单价 (元/kg)</label>
+                    <input type="number" id="p-unit" step="0.01" placeholder="单价">
+                </div>
+                <div class="input-group" style="flex:1;">
+                    <label>总价 (元)</label>
+                    <input type="number" id="p-total" step="0.01" placeholder="总额">
+                </div>
+            </div>
+            <div class="input-group">
+                <label>备注</label>
+                <input type="text" id="p-note" placeholder="备注">
+            </div>
+            <button class="btn-price" onclick="savePriceCode()">换算并生成</button>
+        </div>
+        <div id="list-price" class="history-list"></div>
+    </div>
 
     <script>
-        window.onload = renderList;
+        const borderColors = ['#3f51b5', '#9c27b0', '#009688', '#e91e63', '#ff9800', '#2196f3'];
 
-        function saveAndRender() {
-            let phoneText = document.getElementById('phone').value;
-            let note = document.getElementById('note').value || "未备注";
-
-            if (!phoneText.trim()) {
-                alert("请输入至少一个会员号");
-                return;
-            }
-
-            let phoneArray = phoneText.split('\n').map(p => p.trim()).filter(p => p !== "");
-            let history = JSON.parse(localStorage.getItem('my_qr_list_auto') || '[]');
-            let maxSerial = history.reduce((max, item) => Math.max(max, item.serial || 0), 0);
-
-            let newItems = [];
-            phoneArray.forEach((phone, index) => {
-                maxSerial++;
-                newItems.push({
-                    id: Date.now() + index,
-                    serial: maxSerial,
-                    content: phone,
-                    note: note,
-                    scanCount: 0 
-                });
-            });
-
-            history = newItems.concat(history);
-            localStorage.setItem('my_qr_list_auto', JSON.stringify(history));
-
-            document.getElementById('phone').value = "";
-            document.getElementById('note').value = "";
-            renderList();
+        function getRandomColor() {
+            return borderColors[Math.floor(Math.random() * borderColors.length)];
         }
 
-        // 点击卡片任意位置自动计数，满5次自动消失
-        function handleCardClick(id, event) {
-            if (event.target.classList.contains('btn-del')) return;
-
-            let history = JSON.parse(localStorage.getItem('my_qr_list_auto') || '[]');
-            let item = history.find(x => x.id === id);
-            if (item) {
-                item.scanCount = (item.scanCount || 0) + 1;
-                if (item.scanCount >= 5) {
-                    history = history.filter(x => x.id !== id);
-                }
-                localStorage.setItem('my_qr_list_auto', JSON.stringify(history));
-                renderList();
-            }
-        }
-
-        function deleteItem(id) {
-            let history = JSON.parse(localStorage.getItem('my_qr_list_auto') || '[]');
-            history = history.filter(item => item.id !== id);
-            localStorage.setItem('my_qr_list_auto', JSON.stringify(history));
-            renderList();
-        }
-
-        function clearAllItems() {
-            let history = JSON.parse(localStorage.getItem('my_qr_list_auto') || '[]');
-            if (history.length === 0) {
-                alert("当前没有保存任何会员数据！");
-                return;
-            }
+        window.onload = function() {
+            renderWeightList();
+            renderPriceList();
             
-            if (confirm("确定要清空所有的会员二维码记录吗？此操作无法撤销！")) {
-                localStorage.removeItem('my_qr_list_auto');
-                renderList();
+            document.getElementById('p-sku').addEventListener('input', function() {
+                let sku = this.value.padStart(6, '0');
+                let map = JSON.parse(localStorage.getItem('sku_price_map_v2') || '{}');
+                let unitInput = document.getElementById('p-unit');
+                if (map[sku]) {
+                    unitInput.value = map[sku];
+                    unitInput.classList.add('highlight-fill');
+                    setTimeout(() => unitInput.classList.remove('highlight-fill'), 500);
+                }
+            });
+        };
+
+        function switchTab(mode) {
+            const sw = document.getElementById('section-weight');
+            const sp = document.getElementById('section-price');
+            const tw = document.getElementById('tab-weight');
+            const tp = document.getElementById('tab-price');
+            if (mode === 'weight') {
+                sw.style.display = 'flex'; sp.style.display = 'none';
+                tw.className = 'tab-btn tab-active-weight'; tp.className = 'tab-btn';
+            } else {
+                sw.style.display = 'none'; sp.style.display = 'flex';
+                tw.className = 'tab-btn'; tp.className = 'tab-btn tab-active-price';
             }
         }
 
-        function renderList() {
-            let history = JSON.parse(localStorage.getItem('my_qr_list_auto') || '[]');
-            let listDiv = document.getElementById('list');
-            listDiv.innerHTML = ""; 
+        function calculateEAN13(first12) {
+            let sO = 0, sE = 0;
+            for (let i = 0; i < 12; i++) {
+                let n = parseInt(first12[i]);
+                if ((i + 1) % 2 === 0) sE += n; else sO += n;
+            }
+            let ck = (10 - ((sO + sE * 3) % 10)) % 10;
+            return first12 + ck;
+        }
 
-            history.forEach(item => {
-                let div = document.createElement('div');
-                div.className = 'item';
-                let qrId = "qr-" + item.id;
-                let currentCount = item.scanCount || 0;
-                
-                div.onclick = (e) => handleCardClick(item.id, e);
+        function getComputedGrams(item, currentDiscount, isEnabled) {
+            let baseGrams = item.baseGrams;
+            if (isEnabled && currentDiscount > 0 && currentDiscount <= 10) {
+                let discountRate = currentDiscount / 10;
+                return Math.round(baseGrams / discountRate);
+            }
+            return baseGrams;
+        }
 
-                div.innerHTML = `
-                    <button class="btn-del" onclick="deleteItem(${item.id})">×</button>
-                    <div class="item-info">
-                        <div>
-                            <span class="serial-badge">NO.${item.serial}</span>
-                            <span class="item-note">${item.note}</span>
-                        </div>
-                        <div class="item-phone">${item.content}</div>
-                        <div class="scan-progress">🔄 已扫次数: ${currentCount} / 5 （点击卡片算作扫码一次）</div>
-                    </div>
-                    <div class="qr-box" id="${qrId}"></div>
-                `;
-                listDiv.appendChild(div);
+        function saveWeightCode() {
+            let s = document.getElementById('w-sku').value;
+            let w = parseFloat(document.getElementById('w-weight').value);
+            let n = document.getElementById('w-note').value || "未命名";
+            if (!s || isNaN(w)) return alert("请输入货号和重量");
+            
+            let baseGrams = Math.round(w * 1000);
 
-                try {
-                    new QRCode(document.getElementById(qrId), {
-                        text: item.content,
-                        width: 150,
-                        height: 150,
-                        colorDark : "#000000",
-                        colorLight : "#ffffff",
-                        correctLevel : QRCode.CorrectLevel.H
-                    });
-                } catch (e) {
-                    console.error("二维码生成失败:", e);
-                }
+            let h = JSON.parse(localStorage.getItem('l_w_v2') || '[]');
+            h.unshift({
+                id: Date.now(),
+                sku: s.padStart(6, '0'),
+                baseGrams: baseGrams,
+                originalWeightStr: w,
+                note: n,
+                color: getRandomColor(),
+                discountEnabled: false,
+                discountVal: 5.6
             });
+            localStorage.setItem('l_w_v2', JSON.stringify(h));
+            document.getElementById('w-weight').value = "";
+            renderWeightList();
+        }
+
+        function renderWeightList() {
+            let h = JSON.parse(localStorage.getItem('l_w_v2') || '[]');
+            let l = document.getElementById('list-weight');
+            l.innerHTML = h.map(i => {
+                let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
+                let displayWeightKg = (curGrams / 1000).toFixed(3);
+                let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
+                
+                return `
+                <div class="item" style="border-color: ${i.color || '#ddd'}">
+                    <button class="btn-del" onclick="del('l_w_v2',${i.id},'w')">×</button>
+                    <div class="discount-box">
+                        <label style="margin:0; cursor:pointer;"><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="toggleDiscount('l_w_v2', ${i.id}, this.checked)"> 开启折扣</label>
+                        <span>折扣:</span>
+                        <input type="number" step="0.1" min="1" max="9.9" value="${i.discountVal}" onchange="updateDiscountVal('l_w_v2', ${i.id}, this.value)">折
+                    </div>
+                    <div class="item-info">
+                        <div class="item-note">${i.note}</div>
+                        <div class="item-sub">原始重量: ${i.originalWeightStr} kg ${i.discountEnabled ? `(折后计费重量: ${displayWeightKg} kg)` : ''}</div>
+                        <span class="item-code">${code}</span>
+                    </div>
+                    <canvas id="cw-${i.id}"></canvas>
+                </div>`;
+            }).join('');
+            
+            h.forEach(i => {
+                try {
+                    let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
+                    let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
+                    JsBarcode(`#cw-${i.id}`, code, {format:"EAN13", width:2.5, height:70, displayValue:false});
+                } catch(e) { console.error(e); }
+            });
+        }
+
+        function savePriceCode() {
+            let s = document.getElementById('p-sku').value;
+            let u = parseFloat(document.getElementById('p-unit').value);
+            let t = parseFloat(document.getElementById('p-total').value);
+            let n = document.getElementById('p-note').value || "未命名";
+            if (!s || isNaN(u) || isNaN(t)) return alert("请完整输入");
+            
+            let baseGrams = Math.round((t / u) * 1000);
+            if (baseGrams > 99999) return alert("重量超出限制");
+            
+            let sku = s.padStart(6, '0');
+            let map = JSON.parse(localStorage.getItem('sku_price_map_v2') || '{}');
+            map[sku] = u;
+            localStorage.setItem('sku_price_map_v2', JSON.stringify(map));
+
+            let h = JSON.parse(localStorage.getItem('l_p_v2') || '[]');
+            h.unshift({
+                id: Date.now(),
+                sku: sku,
+                baseGrams: baseGrams,
+                totalPrice: t,
+                unitPrice: u,
+                note: n,
+                color: getRandomColor(),
+                discountEnabled: false,
+                discountVal: 5.6
+            });
+            localStorage.setItem('l_p_v2', JSON.stringify(h));
+            document.getElementById('p-total').value = "";
+            renderPriceList();
+        }
+
+        function renderPriceList() {
+            let h = JSON.parse(localStorage.getItem('l_p_v2') || '[]');
+            let l = document.getElementById('list-price');
+            l.innerHTML = h.map(i => {
+                let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
+                let displayWeightKg = (curGrams / 1000).toFixed(3);
+                let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
+                
+                return `
+                <div class="item" style="border-color: ${i.color || '#ddd'}">
+                    <button class="btn-del" onclick="del('l_p_v2',${i.id},'p')">×</button>
+                    <div class="discount-box">
+                        <label style="margin:0; cursor:pointer;"><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="toggleDiscount('l_p_v2', ${i.id}, this.checked)"> 开启折扣</label>
+                        <span>折扣:</span>
+                        <input type="number" step="0.1" min="1" max="9.9" value="${i.discountVal}" onchange="updateDiscountVal('l_p_v2', ${i.id}, this.value)">折
+                    </div>
+                    <div class="item-info">
+                        <div class="item-note">${i.note}</div>
+                        <div class="item-sub">目标总价: ${i.totalPrice}元 ${i.discountEnabled ? `(折后结算重量: ${displayWeightKg}kg)` : `(约 ${(i.baseGrams/1000).toFixed(3)}kg)`}</div>
+                        <span class="item-code">${code}</span>
+                    </div>
+                    <canvas id="cp-${i.id}"></canvas>
+                </div>`;
+            }).join('');
+            
+            h.forEach(i => {
+                try {
+                    let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
+                    let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
+                    JsBarcode(`#cp-${i.id}`, code, {format:"EAN13", width:2.5, height:70, displayValue:false});
+                } catch(e) { console.error(e); }
+            });
+        }
+
+        function toggleDiscount(key, id, isChecked) {
+            let h = JSON.parse(localStorage.getItem(key) || '[]');
+            let item = h.find(x => x.id === id);
+            if (item) {
+                item.discountEnabled = isChecked;
+                localStorage.setItem(key, JSON.stringify(h));
+                key === 'l_w_v2' ? renderWeightList() : renderPriceList();
+            }
+        }
+
+        function updateDiscountVal(key, id, val) {
+            let num = parseFloat(val);
+            if (isNaN(num) || num <= 0 || num >= 10) return;
+            let h = JSON.parse(localStorage.getItem(key) || '[]');
+            let item = h.find(x => x.id === id);
+            if (item) {
+                item.discountVal = num;
+                localStorage.setItem(key, JSON.stringify(h));
+                key === 'l_w_v2' ? renderWeightList() : renderPriceList();
+            }
+        }
+
+        function del(key, id, type) {
+            let h = JSON.parse(localStorage.getItem(key) || '[]').filter(x => x.id !== id);
+            localStorage.setItem(key, JSON.stringify(h));
+            type === 'w' ? renderWeightList() : renderPriceList();
         }
     </script>
 </body>
