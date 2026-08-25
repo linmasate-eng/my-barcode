@@ -2,27 +2,27 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>7系条码助手（壁纸固定版）</title>
+    <title>7系条码助手（夏日融合版）</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
     <style>
         :root { 
-            --primary: #4a6fa5;     
-            --secondary: #e07a5f;   
-            --glass-bg: rgba(255, 255, 255, 0.88);
+            --primary: #3a7bd5;     
+            --secondary: #f26419;   
+            /* 调整毛玻璃半透明度，让背景更好地透过来 */
+            --glass-bg: rgba(255, 255, 255, 0.45);
             --glass-border: rgba(255, 255, 255, 0.6);
             --text-main: #2b2d42;
         }
 
-        /* 专门用于固定背景的底层容器，彻底解决手机上下滑动时背景拉伸、变动的问题 */
+        /* 独立固定的夏日渐变背景层，彻底解决滑动变动问题 */
         #fixed-bg {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            /* 默认新海诚渐变背景，若上传了自定义图片会被 JS 动态覆盖 */
-            background: linear-gradient(135deg, #2b3a67 0%, #4a6fa5 40%, #e07a5f 80%, #f4a261 100%);
+            background: linear-gradient(135deg, #2b3a67 0%, #3a7bd5 40%, #00d2ff 80%, #f4a261 100%);
             background-size: cover;
             background-position: center;
             z-index: -999;
@@ -48,7 +48,7 @@
         }
 
         .version-tag { 
-            background: rgba(255, 255, 255, 0.2); 
+            background: rgba(255, 255, 255, 0.25); 
             backdrop-filter: blur(8px);
             color: #fff; 
             padding: 6px 14px; 
@@ -56,34 +56,34 @@
             font-size: 12px; 
             font-weight: 500; 
             letter-spacing: 1px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.4);
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
         .bg-btn {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.25);
             backdrop-filter: blur(8px);
             color: #fff;
             padding: 6px 12px;
             border-radius: 20px;
             font-size: 12px;
             font-weight: 500;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.4);
             cursor: pointer;
             transition: background 0.2s;
         }
-        .bg-btn:hover { background: rgba(255, 255, 255, 0.35); }
+        .bg-btn:hover { background: rgba(255, 255, 255, 0.4); }
 
         .tab-container { 
             display: flex; 
             width: 100%; 
             max-width: 400px; 
             margin-bottom: 20px; 
-            background: rgba(255, 255, 255, 0.2); 
+            background: rgba(255, 255, 255, 0.25); 
             backdrop-filter: blur(10px);
             border-radius: 16px; 
             padding: 4px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.4);
         }
         .tab-btn { 
             flex: 1; 
@@ -97,93 +97,110 @@
             background: transparent; 
             transition: all 0.3s ease;
         }
-        .tab-active-weight { background: #ffffff !important; color: var(--primary) !important; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .tab-active-price { background: #ffffff !important; color: var(--secondary) !important; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .tab-active-weight { background: rgba(255, 255, 255, 0.9) !important; color: var(--primary) !important; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .tab-active-price { background: rgba(255, 255, 255, 0.9) !important; color: var(--secondary) !important; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
 
+        /* 半透明毛玻璃卡片面板 */
         .card { 
             background: var(--glass-bg); 
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
             padding: 24px; 
             border-radius: 24px; 
             border: 1px solid var(--glass-border);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             width: 100%; 
             max-width: 400px; 
             box-sizing: border-box; 
         }
 
         .input-group { margin-bottom: 14px; text-align: left; }
-        label { font-size: 13px; font-weight: 600; color: #555; display: block; margin-bottom: 5px; }
+        label { font-size: 13px; font-weight: 600; color: #333; display: block; margin-bottom: 5px; text-shadow: 0 1px 2px rgba(255,255,255,0.5); }
         
         input { 
             width: 100%; 
             padding: 12px; 
-            border: 1px solid #dcdde1; 
+            border: 1px solid rgba(255, 255, 255, 0.6); 
             border-radius: 12px; 
             box-sizing: border-box; 
             font-size: 16px; 
             outline: none; 
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(5px);
             transition: all 0.3s;
+            color: #2b2d42;
         }
-        input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.15); background: #fff; }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(58, 123, 213, 0.2); background: rgba(255, 255, 255, 0.95); }
         
-        .highlight-fill { background-color: #fff8f3 !important; border-color: var(--secondary) !important; }
+        .highlight-fill { background-color: rgba(255, 243, 235, 0.9) !important; border-color: var(--secondary) !important; }
 
         button.btn-weight { 
             width: 100%; padding: 14px; 
-            background: linear-gradient(135deg, #4a6fa5, #2b3a67); 
+            background: linear-gradient(135deg, #3a7bd5, #2b3a67); 
             color: white; border: none; border-radius: 14px; 
             font-size: 16px; font-weight: 600; cursor: pointer; 
-            margin-top: 5px; box-shadow: 0 4px 15px rgba(74, 111, 165, 0.3);
+            margin-top: 5px; box-shadow: 0 4px 15px rgba(58, 123, 213, 0.3);
         }
         button.btn-weight:active { transform: scale(0.98); }
 
         button.btn-price { 
             width: 100%; padding: 14px; 
-            background: linear-gradient(135deg, #e07a5f, #f4a261); 
+            background: linear-gradient(135deg, #f26419, #f4a261); 
             color: white; border: none; border-radius: 14px; 
             font-size: 16px; font-weight: 600; cursor: pointer; 
-            margin-top: 5px; box-shadow: 0 4px 15px rgba(224, 122, 95, 0.3);
+            margin-top: 5px; box-shadow: 0 4px 15px rgba(242, 100, 25, 0.3);
         }
         button.btn-price:active { transform: scale(0.98); }
         
         .history-list { width: 100%; max-width: 400px; margin-top: 25px; }
         
+        /* 历史生成的对话框面板（半透明毛玻璃） */
         .item { 
             background: var(--glass-bg); 
-            backdrop-filter: blur(12px);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
             padding: 24px; 
             border-radius: 24px; 
             margin-bottom: 25px; 
             position: relative; 
             border: 1px solid var(--glass-border);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             text-align: center; 
         }
         
-        .item-info { text-align: center; border-bottom: 1px dashed rgba(0,0,0,0.1); margin-bottom: 15px; padding-bottom: 12px; }
-        .item-note { font-weight: 700; color: var(--text-main); font-size: 18px; }
-        .item-sub { font-size: 14px; color: #666; margin-top: 6px; font-weight: 500; }
+        .item-info { text-align: center; border-bottom: 1px dashed rgba(255,255,255,0.5); margin-bottom: 15px; padding-bottom: 12px; }
+        .item-note { font-weight: 700; color: var(--text-main); font-size: 18px; text-shadow: 0 1px 2px rgba(255,255,255,0.4); }
+        .item-sub { font-size: 14px; color: #444; margin-top: 6px; font-weight: 500; }
         .item-code { font-family: monospace; color: #111; font-size: 19px; font-weight: 700; margin-top: 10px; display: block; letter-spacing: 1.5px; } 
 
         .discount-box { 
             display: flex; align-items: center; justify-content: center; gap: 8px; 
-            margin-bottom: 14px; font-size: 14px; color: #444; 
-            background: rgba(255, 255, 255, 0.6); padding: 8px 12px; border-radius: 12px; 
-            border: 1px solid rgba(0,0,0,0.05); 
+            margin-bottom: 14px; font-size: 14px; color: #333; 
+            background: rgba(255, 255, 255, 0.4); padding: 8px 12px; border-radius: 12px; 
+            border: 1px solid rgba(255,255,255,0.4); 
         }
         .discount-box input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--secondary); }
-        .discount-box input[type="number"] { width: 60px; padding: 4px; text-align: center; font-size: 14px; border: 1px solid #dcdde1; border-radius: 8px; background: #fff; }
+        .discount-box input[type="number"] { width: 60px; padding: 4px; text-align: center; font-size: 14px; border: 1px solid rgba(255,255,255,0.6); border-radius: 8px; background: rgba(255,255,255,0.8); }
 
         .btn-del { 
-            position: absolute; right: 14px; top: 14px; color: #e07a5f; border: none; 
-            background: rgba(224, 122, 95, 0.1); border-radius: 50%; width: 30px; height: 30px; 
+            position: absolute; right: 14px; top: 14px; color: #f26419; border: none; 
+            background: rgba(255, 255, 255, 0.6); border-radius: 50%; width: 30px; height: 30px; 
             font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
 
-        canvas { width: 100% !important; height: auto; margin-top: 10px; background: #ffffff; border-radius: 12px; padding: 8px 0; box-shadow: inset 0 2px 6px rgba(0,0,0,0.03); }
+        /* 条码画布：改为半透明质感，完美融合背景同时不影响红外扫描 */
+        canvas { 
+            width: 100% !important; 
+            height: auto; 
+            margin-top: 10px; 
+            background: rgba(255, 255, 255, 0.9); 
+            backdrop-filter: blur(5px);
+            border-radius: 12px; 
+            padding: 8px 0; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+            border: 1px solid rgba(255,255,255,0.8);
+        }
         
         #section-weight { display: flex; flex-direction: column; align-items: center; width: 100%; }
         #section-price { display: none; flex-direction: column; align-items: center; width: 100%; }
@@ -191,11 +208,11 @@
 </head>
 <body>
 
-    <!-- 独立固定的背景层 -->
+    <!-- 独立固定的夏日渐变背景层 -->
     <div id="fixed-bg"></div>
 
     <div class="top-bar">
-        <div class="version-tag">🏷️ 条码助手 v2.8</div>
+        <div class="version-tag">🏷️ 条码助手 v2.9</div>
         <button class="bg-btn" onclick="document.getElementById('bg-file').click()">🖼️ 更换壁纸</button>
         <input type="file" id="bg-file" accept="image/*" style="display:none" onchange="changeBg(this)">
     </div>
@@ -207,7 +224,7 @@
 
     <div id="section-weight">
         <div class="card">
-            <h2 style="margin:0 0 15px 0; color:#2b3a67; font-size:18px; text-align: center; font-weight:700;">录入重量生成条码</h2>
+            <h2 style="margin:0 0 15px 0; color:#2b3a67; font-size:18px; text-align: center; font-weight:700; text-shadow:0 1px 2px rgba(255,255,255,0.5);">录入重量生成条码</h2>
             <div class="input-group">
                 <label>货号</label>
                 <input type="tel" id="w-sku" placeholder="如: 16">
@@ -227,7 +244,7 @@
 
     <div id="section-price">
         <div class="card">
-            <h2 style="margin:0 0 15px 0; color:#e07a5f; font-size:18px; text-align: center; font-weight:700;">输入价格反推重量</h2>
+            <h2 style="margin:0 0 15px 0; color:#f26419; font-size:18px; text-align: center; font-weight:700; text-shadow:0 1px 2px rgba(255,255,255,0.5);">输入价格反推重量</h2>
             <div class="input-group">
                 <label>货号 (自动填单价)</label>
                 <input type="tel" id="p-sku" placeholder="输入货号">
