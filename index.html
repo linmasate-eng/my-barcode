@@ -1,622 +1,267 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>7系条码与会员码综合助手（半透明森林版）</title>
+    <title>多功能条码与会员码工具箱</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- 引入条码与二维码生成库 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+    <!-- 引入二维码生成库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- 引入条形码生成库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+
     <style>
-        :root { 
-            --primary: #4e8752;     
-            --secondary: #d4a373;   
-            --card-bg: rgba(30, 51, 36, 0.75);     /* 半透明深绿面板 */
-            --card-border: rgba(255, 255, 255, 0.15); /* 半透明精致边框 */
-            --text-main: #e9edc9;   
-            --text-sub: #b7b7a4;    
-        }
-
-        #fixed-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: linear-gradient(135deg, #0f1d13 0%, #1b3322 40%, #284b30 80%, #132217 100%);
-            background-size: cover;
-            background-position: center;
-            z-index: -999;
-            pointer-events: none;
-        }
-
-        /* 森林树叶纹理叠加层 */
-        #fixed-bg::after {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            opacity: 0.15;
-            background-image: radial-gradient(#a3b18a 1px, transparent 1px), radial-gradient(#588157 1px, #0f1d13 1px);
-            background-size: 40px 40px;
-            background-position: 0 0, 20px 20px;
-            pointer-events: none;
-        }
-
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            min-height: 100vh;
-            padding: 20px 15px 150px 15px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            margin: 0; 
-            color: var(--text-main);
-        }
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; margin: 0; padding: 0; overflow-x: hidden; }
         
-        .top-bar {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            align-items: center;
-        }
+        /* 顶部导航 Tab */
+        .tab-bar { display: flex; background: #ffffff; border-bottom: 1px solid #e0e0e0; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .tab-item { flex: 1; text-align: center; padding: 12px 0; font-size: 15px; font-weight: bold; color: #666; cursor: pointer; transition: all 0.3s; border-bottom: 3px solid transparent; }
+        .tab-item.active { color: #007bff; border-bottom-color: #007bff; }
 
-        .version-tag { 
-            background: rgba(23, 43, 30, 0.7); 
-            color: #d8f3dc; 
-            padding: 6px 14px; 
-            border-radius: 20px; 
-            font-size: 12px; 
-            font-weight: 500; 
-            letter-spacing: 1px;
-            border: 1px solid var(--card-border);
-            backdrop-filter: blur(8px);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }
+        /* 滑动容器结构 */
+        .swiper-container { width: 100vw; overflow: hidden; touch-action: pan-y; }
+        .swiper-wrapper { display: flex; width: 300vw; transition: transform 0.3s ease-out; }
+        .swiper-slide { width: 100vw; flex-shrink: 0; padding: 15px; min-height: calc(100vh - 50px); box-sizing: border-box; display: flex; flex-direction: column; align-items: center; }
 
-        .bg-btn {
-            background: rgba(23, 43, 30, 0.7);
-            color: #d8f3dc;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-            border: 1px solid var(--card-border);
-            backdrop-filter: blur(8px);
-            cursor: pointer;
-            transition: background 0.2s;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }
-        .bg-btn:hover { background: rgba(34, 63, 42, 0.85); }
+        /* 公用卡片样式 */
+        .card { background: white; padding: 18px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); width: 100%; max-width: 420px; }
+        h2 { margin: 0 0 12px 0; color: #007bff; font-size: 18px; text-align: center; }
 
-        /* 三栏切换标签容器 */
-        .tab-container { 
-            display: flex; 
-            width: 100%; 
-            max-width: 400px; 
-            margin-bottom: 20px; 
-            background: rgba(19, 34, 23, 0.75); 
-            border-radius: 16px; 
-            padding: 4px;
-            border: 1px solid var(--card-border);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-        .tab-btn { 
-            flex: 1; 
-            padding: 10px 4px; 
-            border: none; 
-            border-radius: 12px; 
-            font-size: 13px; 
-            font-weight: 600; 
-            cursor: pointer; 
-            color: var(--text-sub); 
-            background: transparent; 
-            transition: all 0.3s ease;
-            text-align: center;
-        }
-        .tab-active-weight { background: #4e8752 !important; color: #fff !important; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-        .tab-active-price { background: #d4a373 !important; color: #1e3324 !important; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-        .tab-active-member { background: #3a5a40 !important; color: #e9edc9 !important; border: 1px solid #588157; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        textarea, input, select { width: 100%; padding: 10px 12px; margin: 6px 0 10px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; outline: none; font-family: inherit; }
+        textarea { resize: none; height: 90px; }
 
-        /* 半透明毛玻璃卡片面板 */
-        .card { 
-            background: var(--card-bg); 
-            padding: 24px; 
-            border-radius: 24px; 
-            border: 1px solid var(--card-border);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
-            width: 100%; 
-            max-width: 400px; 
-            box-sizing: border-box; 
-        }
+        /* 按钮通用 */
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-primary:active { background: #0056b3; }
+        .btn-danger { background: #dc3545; color: white; margin-top: 8px; }
+        .btn-danger:active { background: #bd2130; }
 
-        .input-group { margin-bottom: 14px; text-align: left; }
-        label { font-size: 13px; font-weight: 600; color: #b7b7a4; display: block; margin-bottom: 5px; }
+        /* 列表展示 */
+        .history-list { width: 100%; max-width: 420px; margin-top: 15px; }
+        .item { background: white; padding: 15px; border-radius: 10px; margin-bottom: 12px; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center; cursor: pointer; border: 2px solid transparent; }
+        .item:active { background: #f8f9fa; border-color: #007bff; }
         
-        input, textarea { 
-            width: 100%; 
-            padding: 12px; 
-            border: 1px solid rgba(255, 255, 255, 0.15); 
-            border-radius: 12px; 
-            box-sizing: border-box; 
-            font-size: 16px; 
-            outline: none; 
-            background: rgba(19, 34, 23, 0.6);
-            color: #fff;
-            transition: all 0.3s;
-            font-family: inherit;
-        }
-        textarea { resize: none; height: 100px; }
-        input:focus, textarea:focus { border-color: #588157; box-shadow: 0 0 0 3px rgba(88, 129, 87, 0.25); background: rgba(24, 43, 30, 0.8); }
-        
-        .highlight-fill { background-color: rgba(56, 44, 31, 0.8) !important; border-color: #d4a373 !important; }
+        .item-info { text-align: left; border-bottom: 1px dashed #eee; margin-bottom: 8px; padding-bottom: 6px; padding-right: 30px; display: flex; flex-direction: column; gap: 4px; }
+        .serial-badge { display: inline-block; background: #007bff; color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 5px; }
+        .item-note { font-weight: bold; color: #333; font-size: 15px; }
+        .item-detail { color: #007bff; font-family: monospace; font-size: 15px; font-weight: bold; }
+        .scan-progress { font-size: 12px; color: #e65100; font-weight: bold; }
 
-        button.btn-weight { 
-            width: 100%; padding: 14px; background: linear-gradient(135deg, #4e8752, #386641); 
-            color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 5px; box-shadow: 0 4px 15px rgba(56, 102, 65, 0.4);
-        }
-        button.btn-price { 
-            width: 100%; padding: 14px; background: linear-gradient(135deg, #d4a373, #bc6c25); 
-            color: #1e3324; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 5px; box-shadow: 0 4px 15px rgba(188, 108, 37, 0.4);
-        }
-        button.btn-member { 
-            width: 100%; padding: 14px; background: linear-gradient(135deg, #588157, #3a5a40); 
-            color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 5px; box-shadow: 0 4px 15px rgba(88, 129, 87, 0.4);
-        }
-        button.btn-clear { 
-            width: 100%; padding: 10px; background: rgba(180, 50, 50, 0.6); 
-            color: #ffcccc; border: 1px solid rgba(255,100,100,0.3); border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 8px; 
-        }
-        button:active { transform: scale(0.98); }
+        .btn-del { position: absolute; right: 10px; top: 12px; color: #dc3545; border: none; background: #ffe1e1; border-radius: 50%; width: 26px; height: 26px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2; }
         
-        .history-list { width: 100%; max-width: 400px; margin-top: 25px; }
-        
-        /* 历史项通用面板 */
-        .item { 
-            background: var(--card-bg); 
-            padding: 24px; 
-            border-radius: 24px; 
-            margin-bottom: 25px; 
-            position: relative; 
-            border: 1px solid var(--card-border);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
-            text-align: center; 
-        }
-        .item-member { cursor: pointer; transition: background 0.2s; }
-        .item-member:active { background: rgba(40, 70, 48, 0.85); }
-        
-        .item-info { text-align: center; border-bottom: 1px dashed rgba(255,255,255,0.15); margin-bottom: 15px; padding-bottom: 12px; }
-        .item-info-left { text-align: left; padding-right: 30px; display: flex; flex-direction: column; gap: 4px; }
-        
-        .item-note { font-weight: 700; color: #e9edc9; font-size: 18px; }
-        .item-sub { font-size: 14px; color: #b7b7a4; margin-top: 6px; font-weight: 500; }
-        .item-sub b { color: #d4a373; }
-        .item-code { font-family: monospace; color: #ccd5ae; font-size: 19px; font-weight: 700; margin-top: 10px; display: block; letter-spacing: 1.5px; } 
+        .qr-box, .barcode-box { display: flex; justify-content: center; margin-top: 8px; overflow-x: auto; }
+        .qr-box img, .qr-box canvas { padding: 4px; background: #fff; border: 1px solid #eee; }
+        .barcode-box svg { max-width: 100%; height: auto; }
 
-        .serial-badge { display: inline-block; background: #588157; color: white; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; margin-right: 6px; }
-        .item-phone { color: #d4a373; font-family: monospace; font-size: 17px; font-weight: bold; margin-top: 2px; }
-        .scan-progress { font-size: 12px; color: #f4a261; font-weight: bold; margin-top: 4px; }
-
-        .discount-box { 
-            display: flex; align-items: center; justify-content: center; gap: 8px; 
-            margin-bottom: 14px; font-size: 14px; color: #b7b7a4; 
-            background: rgba(19, 34, 23, 0.6); padding: 8px 12px; border-radius: 12px; 
-            border: 1px solid rgba(255, 255, 255, 0.1); 
-        }
-        .discount-box input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: #d4a373; }
-        .discount-box input[type="number"] { width: 60px; padding: 4px; text-align: center; font-size: 14px; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; background: rgba(30, 51, 36, 0.8); color: #fff; }
-
-        .btn-del { 
-            position: absolute; right: 14px; top: 14px; color: #ffcccc; border: none; 
-            background: rgba(180, 50, 50, 0.6); border-radius: 50%; width: 30px; height: 30px; 
-            font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; 
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2); z-index: 2;
-        }
-
-        /* 扫描区/画布区域：纯白底板以防扫描枪/扫码墩识别失败 */
-        canvas { 
-            width: 100% !important; height: auto; margin-top: 10px; background: #ffffff; border-radius: 12px; padding: 8px 0; box-shadow: inset 0 2px 6px rgba(0,0,0,0.1); 
-        }
-        .qr-box { display: flex; justify-content: center; margin-top: 10px; }
-        .qr-box img, .qr-box canvas { padding: 6px; background: #fff; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); display: block; }
-        
-        #section-weight { display: flex; flex-direction: column; align-items: center; width: 100%; }
-        #section-price { display: none; flex-direction: column; align-items: center; width: 100%; }
-        #section-member { display: none; flex-direction: column; align-items: center; width: 100%; }
+        /* 计算器专有结果展示 */
+        .calc-result { background: #eef6ff; padding: 12px; border-radius: 8px; margin-top: 10px; border: 1px solid #b6d4fe; }
+        .calc-price { font-size: 22px; color: #d63384; font-weight: bold; text-align: center; }
     </style>
 </head>
 <body>
 
-    <!-- 森林渐变与树叶材质底层 -->
-    <div id="fixed-bg"></div>
-
-    <div class="top-bar">
-        <div class="version-tag">🌲 综合助手 v4.0</div>
-        <button class="bg-btn" onclick="document.getElementById('bg-file').click()">🖼️ 更换壁纸</button>
-        <input type="file" id="bg-file" accept="image/*" style="display:none" onchange="changeBg(this)">
+    <!-- 顶部 Tab 切换 -->
+    <div class="tab-bar">
+        <div class="tab-item active" onclick="switchTab(0)">会员码 (消减)</div>
+        <div class="tab-item" onclick="switchTab(1)">折扣算价条码</div>
+        <div class="tab-item" onclick="switchTab(2)">批量一维条码</div>
     </div>
 
-    <!-- 三栏切换按钮 -->
-    <div class="tab-container">
-        <button id="tab-weight" class="tab-btn tab-active-weight" onclick="switchTab('weight')">按重量生成</button>
-        <button id="tab-price" class="tab-btn" onclick="switchTab('price')">价格反推</button>
-        <button id="tab-member" class="tab-btn" onclick="switchTab('member')">会员码生成</button>
-    </div>
-
-    <!-- 1. 按重量生成区块 -->
-    <div id="section-weight">
-        <div class="card">
-            <h2 style="margin:0 0 15px 0; color:#ccd5ae; font-size:18px; text-align: center; font-weight:700;">录入重量生成条码</h2>
-            <div class="input-group">
-                <label>货号</label>
-                <input type="tel" id="w-sku" placeholder="如: 16">
-            </div>
-            <div class="input-group">
-                <label>重量 (kg)</label>
-                <input type="number" id="w-weight" step="0.001" placeholder="如: 0.525">
-            </div>
-            <div class="input-group">
-                <label>备注</label>
-                <input type="text" id="w-note" placeholder="如: 鸡蛋">
-            </div>
-            <button class="btn-weight" onclick="saveWeightCode()">生成并保存条码</button>
-        </div>
-        <div id="list-weight" class="history-list"></div>
-    </div>
-
-    <!-- 2. 价格反推区块 -->
-    <div id="section-price">
-        <div class="card">
-            <h2 style="margin:0 0 15px 0; color:#d4a373; font-size:18px; text-align: center; font-weight:700;">输入价格反推重量</h2>
-            <div class="input-group">
-                <label>货号 (自动填单价)</label>
-                <input type="tel" id="p-sku" placeholder="输入货号">
-            </div>
-            <div style="display:flex; gap:10px;">
-                <div class="input-group" style="flex:1;">
-                    <label>单价 (元/kg)</label>
-                    <input type="number" id="p-unit" step="0.01" placeholder="单价">
+    <!-- 滑动主体容器 -->
+    <div class="swiper-container" id="swiperContainer">
+        <div class="swiper-wrapper" id="swiperWrapper">
+            
+            <!-- 模式 1：会员码自动消减版 -->
+            <div class="swiper-slide">
+                <div class="card">
+                    <h2>会员二维码 (自动消减版)</h2>
+                    <textarea id="m1_phone" placeholder="输入会员手机号，多个号码换行&#10;13800000001&#10;13800000002"></textarea>
+                    <input type="text" id="m1_note" placeholder="统一备注 (选填)">
+                    <button class="btn btn-primary" onclick="m1_save()">生成并保存</button>
+                    <button class="btn btn-danger" onclick="m1_clearAll()">一键清除所有记录</button>
                 </div>
-                <div class="input-group" style="flex:1;">
-                    <label>总价 (元)</label>
-                    <input type="number" id="p-total" step="0.01" placeholder="总额">
+                <div id="m1_list" class="history-list"></div>
+            </div>
+
+            <!-- 模式 2：折扣算价生成条码 -->
+            <div class="swiper-slide">
+                <div class="card">
+                    <h2>折扣算价与收银条码</h2>
+                    <input type="number" id="m2_price" placeholder="商品原价 (元)" step="0.01">
+                    <select id="m2_type" onchange="m2_toggleType()">
+                        <option value="discount">按折扣计算 (如: 85折输入8.5)</option>
+                        <option value="reduce">按立减计算 (如: 满100减20输入20)</option>
+                    </select>
+                    <input type="number" id="m2_val" placeholder="输入折扣数 (例如 8.5)" step="0.1">
+                    <button class="btn btn-primary" onclick="m2_calculate()">计算价格并生成码</button>
+
+                    <div id="m2_result_box" class="calc-result" style="display:none;">
+                        <div style="font-size:13px; color:#666; text-align:center;">计算结果折后价：</div>
+                        <div class="calc-price" id="m2_final_price">￥0.00</div>
+                        <div class="barcode-box"><svg id="m2_barcode"></svg></div>
+                        <div class="qr-box" id="m2_qrcode"></div>
+                    </div>
                 </div>
             </div>
-            <div class="input-group">
-                <label>备注</label>
-                <input type="text" id="p-note" placeholder="备注">
-            </div>
-            <button class="btn-price" onclick="savePriceCode()">换算并生成条码</button>
-        </div>
-        <div id="list-price" class="history-list"></div>
-    </div>
 
-    <!-- 3. 会员码生成区块（带自动消减/计数功能） -->
-    <div id="section-member">
-        <div class="card">
-            <h2 style="margin:0 0 15px 0; color:#e9edc9; font-size:18px; text-align: center; font-weight:700;">会员二维码 (满5次自动消失)</h2>
-            <div class="input-group">
-                <label>会员号 / 手机号 (支持批量换行)</label>
-                <textarea id="m-phone" placeholder="输入会员手机号，多个号码请换行&#10;13800000001&#10;13800000002"></textarea>
+            <!-- 模式 3：批量生成一维条形码 -->
+            <div class="swiper-slide">
+                <div class="card">
+                    <h2>批量一维条形码生成</h2>
+                    <textarea id="m3_text" placeholder="输入条码内容/商品编码，多个换行&#10;690123456789&#10;ITEM20260801"></textarea>
+                    <button class="btn btn-primary" onclick="m3_generate()">生成条形码列表</button>
+                </div>
+                <div id="m3_list" class="history-list"></div>
             </div>
-            <div class="input-group">
-                <label>统一备注 (选填)</label>
-                <input type="text" id="m-note" placeholder="如：VIP批次">
-            </div>
-            <button class="btn-member" onclick="saveMemberCode()">批量生成会员码</button>
-            <button class="btn-clear" onclick="clearAllMembers()">清空所有会员记录</button>
+
         </div>
-        <div id="list-member" class="history-list"></div>
     </div>
 
     <script>
-        window.onload = function() {
-            let savedBg = localStorage.getItem('custom_bg_img_forest_all');
-            if (savedBg) {
-                document.getElementById('fixed-bg').style.backgroundImage = `url(${savedBg})`;
-            }
-
-            renderWeightList();
-            renderPriceList();
-            renderMemberList();
-            
-            document.getElementById('p-sku').addEventListener('input', function() {
-                let sku = this.value.padStart(6, '0');
-                let map = JSON.parse(localStorage.getItem('sku_price_map_v5') || '{}');
-                let unitInput = document.getElementById('p-unit');
-                if (map[sku]) {
-                    unitInput.value = map[sku];
-                    unitInput.classList.add('highlight-fill');
-                    setTimeout(() => unitInput.classList.remove('highlight-fill'), 600);
-                }
+        // ==================== 全局滑动与 Tab 逻辑 ====================
+        let currentTab = 0;
+        const wrapper = document.getElementById('swiperWrapper');
+        const tabs = document.querySelectorAll('.tab-item');
+        
+        function switchTab(index) {
+            currentTab = index;
+            wrapper.style.transform = `translateX(-${index * 100}vw)`;
+            tabs.forEach((tab, i) => {
+                if (i === index) tab.classList.add('active');
+                else tab.classList.remove('active');
             });
+        }
+
+        // 手势触控左右滑动实现
+        let startX = 0, currentTranslate = 0, isDragging = false;
+        const container = document.getElementById('swiperContainer');
+
+        container.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            isDragging = true;
+            wrapper.style.transition = 'none';
+        });
+
+        container.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            const moveX = e.touches[0].clientX;
+            const diffX = moveX - startX;
+            // 阻尼限制边界滑动
+            if ((currentTab === 0 && diffX > 0) || (currentTab === 2 && diffX < 0)) return;
+            wrapper.style.transform = `translateX(calc(-${currentTab * 100}vw + ${diffX}px))`;
+        });
+
+        container.addEventListener('touchend', (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            wrapper.style.transition = 'transform 0.3s ease-out';
+            const endX = e.changedTouches[0].clientX;
+            const diffX = endX - startX;
+
+            if (diffX < -50 && currentTab < 2) {
+                switchTab(currentTab + 1);
+            } else if (diffX > 50 && currentTab > 0) {
+                switchTab(currentTab - 1);
+            } else {
+                switchTab(currentTab);
+            }
+        });
+
+        window.onload = function() {
+            m1_renderList();
         };
 
-        function changeBg(input) {
-            if (input.files && input.files[0]) {
-                let reader = new FileReader();
-                reader.onload = function(e) {
-                    let base64Img = e.target.result;
-                    document.getElementById('fixed-bg').style.backgroundImage = `url(${base64Img})`;
-                    localStorage.setItem('custom_bg_img_forest_all', base64Img);
-                };
-                reader.readAsDataURL(input.files[0]);
+        // ==================== 模式 1：会员码自动消减 ====================
+        function m1_save() {
+            let phoneText = document.getElementById('m1_phone').value;
+            let note = document.getElementById('m1_note').value || "未备注";
+
+            if (!phoneText.trim()) {
+                alert("请输入至少一个会员号");
+                return;
             }
-        }
-
-        // 切换面板标签
-        function switchTab(mode) {
-            const sw = document.getElementById('section-weight');
-            const sp = document.getElementById('section-price');
-            const sm = document.getElementById('section-member');
-            const tw = document.getElementById('tab-weight');
-            const tp = document.getElementById('tab-price');
-            const tm = document.getElementById('tab-member');
-
-            sw.style.display = 'none'; sp.style.display = 'none'; sm.style.display = 'none';
-            tw.className = 'tab-btn'; tp.className = 'tab-btn'; tm.className = 'tab-btn';
-
-            if (mode === 'weight') {
-                sw.style.display = 'flex';
-                tw.className = 'tab-btn tab-active-weight';
-            } else if (mode === 'price') {
-                sp.style.display = 'flex';
-                tp.className = 'tab-btn tab-active-price';
-            } else if (mode === 'member') {
-                sm.style.display = 'flex';
-                tm.className = 'tab-btn tab-active-member';
-            }
-        }
-
-        // --- 逻辑1: 重量条码部分 ---
-        function calculateEAN13(first12) {
-            let sO = 0, sE = 0;
-            for (let i = 0; i < 12; i++) {
-                let n = parseInt(first12[i]);
-                if ((i + 1) % 2 === 0) sE += n; else sO += n;
-            }
-            let ck = (10 - ((sO + sE * 3) % 10)) % 10;
-            return first12 + ck;
-        }
-
-        function getComputedGrams(item, currentDiscount, isEnabled) {
-            let baseGrams = item.baseGrams;
-            if (isEnabled && currentDiscount > 0 && currentDiscount <= 10) {
-                let scaledGrams = (baseGrams * 10) / currentDiscount;
-                return Math.round(scaledGrams);
-            }
-            return baseGrams;
-        }
-
-        function saveWeightCode() {
-            let s = document.getElementById('w-sku').value;
-            let w = parseFloat(document.getElementById('w-weight').value);
-            let n = document.getElementById('w-note').value || "未命名";
-            if (!s || isNaN(w)) return alert("请输入货号和重量");
-            
-            let baseGrams = Math.round(w * 1000);
-            let h = JSON.parse(localStorage.getItem('l_w_v5') || '[]');
-            h.unshift({
-                id: Date.now(),
-                sku: s.padStart(6, '0'),
-                baseGrams: baseGrams,
-                originalWeightStr: w,
-                note: n,
-                discountEnabled: false,
-                discountVal: 5.0
-            });
-            localStorage.setItem('l_w_v5', JSON.stringify(h));
-            document.getElementById('w-weight').value = "";
-            renderWeightList();
-        }
-
-        function renderWeightList() {
-            let h = JSON.parse(localStorage.getItem('l_w_v5') || '[]');
-            let l = document.getElementById('list-weight');
-            l.innerHTML = h.map(i => {
-                let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
-                let displayWeightKg = (curGrams / 1000).toFixed(3);
-                let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
-                
-                return `
-                <div class="item">
-                    <button class="btn-del" onclick="del('l_w_v5',${i.id},'w')">×</button>
-                    <div class="discount-box">
-                        <label style="margin:0; cursor:pointer;"><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="toggleDiscount('l_w_v5', ${i.id}, this.checked)"> 开启折扣</label>
-                        <span>折扣:</span>
-                        <input type="number" step="0.1" min="1" max="9.9" value="${i.discountVal}" onchange="updateDiscountVal('l_w_v5', ${i.id}, this.value)">折
-                    </div>
-                    <div class="item-info">
-                        <div class="item-note">${i.note}</div>
-                        <div class="item-sub">原始重量: ${i.originalWeightStr} kg ${i.discountEnabled ? `<br>✨ 折后计费重: <b>${displayWeightKg} kg</b>` : ''}</div>
-                        <span class="item-code">${code}</span>
-                    </div>
-                    <canvas id="cw-${i.id}"></canvas>
-                </div>`;
-            }).join('');
-            
-            h.forEach(i => {
-                try {
-                    let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
-                    let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
-                    JsBarcode(`#cw-${i.id}`, code, {format:"EAN13", width:2.5, height:70, displayValue:false});
-                } catch(e) {}
-            });
-        }
-
-        function toggleDiscount(key, id, isChecked) {
-            let h = JSON.parse(localStorage.getItem(key) || '[]');
-            let item = h.find(x => x.id === id);
-            if (item) {
-                item.discountEnabled = isChecked;
-                localStorage.setItem(key, JSON.stringify(h));
-                renderWeightList();
-            }
-        }
-
-        function updateDiscountVal(key, id, val) {
-            let num = parseFloat(val);
-            if (isNaN(num) || num <= 0 || num >= 10) return;
-            let h = JSON.parse(localStorage.getItem(key) || '[]');
-            let item = h.find(x => x.id === id);
-            if (item) {
-                item.discountVal = num;
-                localStorage.setItem(key, JSON.stringify(h));
-                renderWeightList();
-            }
-        }
-
-        // --- 逻辑2: 价格反推部分 ---
-        function savePriceCode() {
-            let s = document.getElementById('p-sku').value;
-            let u = parseFloat(document.getElementById('p-unit').value);
-            let t = parseFloat(document.getElementById('p-total').value);
-            let n = document.getElementById('p-note').value || "未命名";
-            if (!s || isNaN(u) || isNaN(t)) return alert("请完整输入信息");
-            
-            let baseGrams = Math.round((t / u) * 1000);
-            if (baseGrams > 99999) return alert("重量超出限制");
-            
-            let sku = s.padStart(6, '0');
-            let map = JSON.parse(localStorage.getItem('sku_price_map_v5') || '{}');
-            map[sku] = u;
-            localStorage.setItem('sku_price_map_v5', JSON.stringify(map));
-
-            let h = JSON.parse(localStorage.getItem('l_p_v5') || '[]');
-            h.unshift({
-                id: Date.now(), sku: sku, baseGrams: baseGrams, totalPrice: t, unitPrice: u, note: n, discountEnabled: false, discountVal: 5.0
-            });
-            localStorage.setItem('l_p_v5', JSON.stringify(h));
-            document.getElementById('p-total').value = "";
-            renderPriceList();
-        }
-
-        function renderPriceList() {
-            let h = JSON.parse(localStorage.getItem('l_p_v5') || '[]');
-            let l = document.getElementById('list-price');
-            l.innerHTML = h.map(i => {
-                let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
-                let displayWeightKg = (curGrams / 1000).toFixed(3);
-                let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
-                
-                return `
-                <div class="item">
-                    <button class="btn-del" onclick="del('l_p_v5',${i.id},'p')">×</button>
-                    <div class="discount-box">
-                        <label style="margin:0; cursor:pointer;"><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="togglePriceDiscount(${i.id}, this.checked)"> 开启折扣</label>
-                        <span>折扣:</span>
-                        <input type="number" step="0.1" min="1" max="9.9" value="${i.discountVal}" onchange="updatePriceDiscountVal(${i.id}, this.value)">折
-                    </div>
-                    <div class="item-info">
-                        <div class="item-note">${i.note}</div>
-                        <div class="item-sub">目标总价: ${i.totalPrice}元 ${i.discountEnabled ? `<br>✨ 折后结算重: <b>${displayWeightKg}kg</b>` : `(约 ${(i.baseGrams/1000).toFixed(3)}kg)`}</div>
-                        <span class="item-code">${code}</span>
-                    </div>
-                    <canvas id="cp-${i.id}"></canvas>
-                </div>`;
-            }).join('');
-            
-            h.forEach(i => {
-                try {
-                    let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
-                    let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
-                    JsBarcode(`#cp-${i.id}`, code, {format:"EAN13", width:2.5, height:70, displayValue:false});
-                } catch(e) {}
-            });
-        }
-
-        function togglePriceDiscount(id, isChecked) {
-            let h = JSON.parse(localStorage.getItem('l_p_v5') || '[]');
-            let item = h.find(x => x.id === id);
-            if (item) { item.discountEnabled = isChecked; localStorage.setItem('l_p_v5', JSON.stringify(h)); renderPriceList(); }
-        }
-        function updatePriceDiscountVal(id, val) {
-            let num = parseFloat(val);
-            if (isNaN(num) || num <= 0 || num >= 10) return;
-            let h = JSON.parse(localStorage.getItem('l_p_v5') || '[]');
-            let item = h.find(x => x.id === id);
-            if (item) { item.discountVal = num; localStorage.setItem('l_p_v5', JSON.stringify(h)); renderPriceList(); }
-        }
-
-        // --- 逻辑3: 会员码部分（自动消减与计数） ---
-        function saveMemberCode() {
-            let phoneText = document.getElementById('m-phone').value;
-            let note = document.getElementById('m-note').value || "未备注";
-            if (!phoneText.trim()) return alert("请输入至少一个会员号");
 
             let phoneArray = phoneText.split('\n').map(p => p.trim()).filter(p => p !== "");
-            let history = JSON.parse(localStorage.getItem('my_qr_list_auto_forest') || '[]');
+            let history = JSON.parse(localStorage.getItem('my_qr_list_auto') || '[]');
             let maxSerial = history.reduce((max, item) => Math.max(max, item.serial || 0), 0);
 
             let newItems = [];
             phoneArray.forEach((phone, index) => {
                 maxSerial++;
-                newItems.push({ id: Date.now() + index, serial: maxSerial, content: phone, note: note, scanCount: 0 });
+                newItems.push({
+                    id: Date.now() + index,
+                    serial: maxSerial,
+                    content: phone,
+                    note: note,
+                    scanCount: 0
+                });
             });
 
             history = newItems.concat(history);
-            localStorage.setItem('my_qr_list_auto_forest', JSON.stringify(history));
-            document.getElementById('m-phone').value = "";
-            document.getElementById('m-note').value = "";
-            renderMemberList();
+            localStorage.setItem('my_qr_list_auto', JSON.stringify(history));
+
+            document.getElementById('m1_phone').value = "";
+            document.getElementById('m1_note').value = "";
+            m1_renderList();
         }
 
-        function handleMemberCardClick(id, event) {
+        function m1_handleCardClick(id, event) {
             if (event.target.classList.contains('btn-del')) return;
-            let history = JSON.parse(localStorage.getItem('my_qr_list_auto_forest') || '[]');
+
+            let history = JSON.parse(localStorage.getItem('my_qr_list_auto') || '[]');
             let item = history.find(x => x.id === id);
             if (item) {
                 item.scanCount = (item.scanCount || 0) + 1;
                 if (item.scanCount >= 5) {
                     history = history.filter(x => x.id !== id);
                 }
-                localStorage.setItem('my_qr_list_auto_forest', JSON.stringify(history));
-                renderMemberList();
+                localStorage.setItem('my_qr_list_auto', JSON.stringify(history));
+                m1_renderList();
             }
         }
 
-        function deleteMember(id) {
-            let history = JSON.parse(localStorage.getItem('my_qr_list_auto_forest') || '[]');
+        function m1_deleteItem(id) {
+            let history = JSON.parse(localStorage.getItem('my_qr_list_auto') || '[]');
             history = history.filter(item => item.id !== id);
-            localStorage.setItem('my_qr_list_auto_forest', JSON.stringify(history));
-            renderMemberList();
+            localStorage.setItem('my_qr_list_auto', JSON.stringify(history));
+            m1_renderList();
         }
 
-        function clearAllMembers() {
-            let history = JSON.parse(localStorage.getItem('my_qr_list_auto_forest') || '[]');
-            if (history.length === 0) return alert("当前没有保存任何会员数据！");
+        function m1_clearAll() {
+            let history = JSON.parse(localStorage.getItem('my_qr_list_auto') || '[]');
+            if (history.length === 0) {
+                alert("当前没有保存任何会员数据！");
+                return;
+            }
             if (confirm("确定要清空所有的会员二维码记录吗？")) {
-                localStorage.removeItem('my_qr_list_auto_forest');
-                renderMemberList();
+                localStorage.removeItem('my_qr_list_auto');
+                m1_renderList();
             }
         }
 
-        function renderMemberList() {
-            let history = JSON.parse(localStorage.getItem('my_qr_list_auto_forest') || '[]');
-            let listDiv = document.getElementById('list-member');
+        function m1_renderList() {
+            let history = JSON.parse(localStorage.getItem('my_qr_list_auto') || '[]');
+            let listDiv = document.getElementById('m1_list');
             listDiv.innerHTML = ""; 
 
             history.forEach(item => {
                 let div = document.createElement('div');
-                div.className = 'item item-member';
-                let qrId = "qr-" + item.id;
+                div.className = 'item';
+                let qrId = "m1-qr-" + item.id;
                 let currentCount = item.scanCount || 0;
                 
-                div.onclick = (e) => handleMemberCardClick(item.id, e);
+                div.onclick = (e) => m1_handleCardClick(item.id, e);
 
                 div.innerHTML = `
-                    <button class="btn-del" onclick="deleteMember(${item.id})">×</button>
-                    <div class="item-info item-info-left">
+                    <button class="btn-del" onclick="m1_deleteItem(${item.id})">×</button>
+                    <div class="item-info">
                         <div>
                             <span class="serial-badge">NO.${item.serial}</span>
                             <span class="item-note">${item.note}</span>
                         </div>
-                        <div class="item-phone">${item.content}</div>
-                        <div class="scan-progress">🔄 已扫次数: ${currentCount} / 5 （点击卡片算作扫码一次）</div>
+                        <div class="item-detail">${item.content}</div>
+                        <div class="scan-progress">🔄 已扫次数: ${currentCount} / 5 （点击卡片累加）</div>
                     </div>
                     <div class="qr-box" id="${qrId}"></div>
                 `;
@@ -624,16 +269,89 @@
 
                 try {
                     new QRCode(document.getElementById(qrId), {
-                        text: item.content, width: 140, height: 140, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
+                        text: item.content,
+                        width: 140,
+                        height: 140,
+                        colorDark : "#000000",
+                        colorLight : "#ffffff",
+                        correctLevel : QRCode.CorrectLevel.H
                     });
-                } catch (e) {}
+                } catch (e) { console.error(e); }
             });
         }
 
-        function del(key, id, type) {
-            let h = JSON.parse(localStorage.getItem(key) || '[]').filter(x => x.id !== id);
-            localStorage.setItem(key, JSON.stringify(h));
-            type === 'w' ? renderWeightList() : renderPriceList();
+        // ==================== 模式 2：折扣算价逻辑 ====================
+        function m2_toggleType() {
+            let type = document.getElementById('m2_type').value;
+            let valInput = document.getElementById('m2_val');
+            valInput.placeholder = type === 'discount' ? "输入折扣数 (例如 8.5)" : "输入立减金额 (例如 20)";
+        }
+
+        function m2_calculate() {
+            let price = parseFloat(document.getElementById('m2_price').value);
+            let val = parseFloat(document.getElementById('m2_val').value);
+            let type = document.getElementById('m2_type').value;
+
+            if (isNaN(price) || isNaN(val)) {
+                alert("请输入有效的价格和数值");
+                return;
+            }
+
+            let finalPrice = 0;
+            if (type === 'discount') {
+                finalPrice = price * (val / 10);
+            } else {
+                finalPrice = Math.max(0, price - val);
+            }
+
+            finalPrice = finalPrice.toFixed(2);
+            document.getElementById('m2_final_price').innerText = "￥" + finalPrice;
+            document.getElementById('m2_result_box').style.display = "block";
+
+            // 生成条形码与二维码
+            JsBarcode("#m2_barcode", finalPrice, { format: "CODE128", height: 50, displayValue: true });
+            
+            let qrContainer = document.getElementById('m2_qrcode');
+            qrContainer.innerHTML = "";
+            new QRCode(qrContainer, { text: finalPrice, width: 130, height: 130 });
+        }
+
+        // ==================== 模式 3：批量一维条码逻辑 ====================
+        function m3_generate() {
+            let text = document.getElementById('m3_text').value;
+            if (!text.trim()) {
+                alert("请输入条形码内容");
+                return;
+            }
+
+            let lines = text.split('\n').map(l => l.trim()).filter(l => l !== "");
+            let listDiv = document.getElementById('m3_list');
+            listDiv.innerHTML = "";
+
+            lines.forEach((line, idx) => {
+                let card = document.createElement('div');
+                card.className = 'item';
+                let barcodeSvgId = "m3-bc-" + idx;
+                
+                card.innerHTML = `
+                    <div class="item-info">
+                        <span class="item-note">条码内容: ${line}</span>
+                    </div>
+                    <div class="barcode-box"><svg id="${barcodeSvgId}"></svg></div>
+                `;
+                listDiv.appendChild(card);
+
+                try {
+                    JsBarcode("#" + barcodeSvgId, line, {
+                        format: "CODE128",
+                        width: 2,
+                        height: 60,
+                        displayValue: true
+                    });
+                } catch (e) {
+                    document.getElementById(barcodeSvgId).parentNode.innerHTML = "<span style='color:red;'>条码生成错误 (检查格式)</span>";
+                }
+            });
         }
     </script>
 </body>
