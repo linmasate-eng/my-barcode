@@ -229,7 +229,7 @@
         }
 
         canvas { width: 100% !important; height: auto; margin-top: 8px; background: #ffffff; border-radius: 10px; padding: 6px 0; }
-        .qr-box { display: flex; justify-content: center; margin-top: 8px; }
+        .qr-box { display: flex; justify-content: center; margin-top: 8px; min-height: 164px; align-items: center; }
         .qr-box img, .qr-box canvas { padding: 6px; background: #fff; border-radius: 8px; display: block; }
     </style>
 </head>
@@ -238,7 +238,7 @@
     <div id="fixed-bg"></div>
 
     <div class="top-bar">
-        <div class="version-tag">🌲 综合助手 v4.7</div>
+        <div class="version-tag">🌲 综合助手 v4.8 (防闪烁优化版)</div>
         <button class="bg-btn" onclick="document.getElementById('bg-file').click()">🖼️ 更换壁纸</button>
         <input type="file" id="bg-file" accept="image/*" style="display:none" onchange="changeBg(this)">
     </div>
@@ -301,7 +301,7 @@
             <div id="list-price" class="history-list"></div>
         </div>
 
-        <!-- 第 3 页：会员码生成（自动消减版） -->
+        <!-- 第 3 页：会员码生成（防闪烁版） -->
         <div class="page-pane">
             <div class="card">
                 <h2 style="margin:0 0 12px 0; color:#90caf9; font-size:17px; text-align: center; font-weight:700;">会员二维码生成 (自动消减)</h2>
@@ -323,6 +323,7 @@
 
     <script>
         let scrollTimeout = null;
+        let qrInstances = {}; // 缓存二维码实例，防止重复初始化导致闪烁
 
         window.onload = function() {
             let savedBg = localStorage.getItem('custom_bg_img_snap_v3');
@@ -366,7 +367,6 @@
             });
         }
 
-        // 联动标签与松手自动对齐居中
         function handleScrollSync() {
             const slider = document.getElementById('pageSlider');
             let index = Math.round(slider.scrollLeft / slider.clientWidth);
@@ -557,7 +557,7 @@
             renderPriceList();
         }
 
-        // --- 逻辑3: 会员码生成（自动消减） ---
+        // --- 逻辑3: 会员码生成（防闪烁、增量渲染版） ---
         function saveMemberCode() {
             let phoneText = document.getElementById('m-phone').value;
             let note = document.getElementById('m-note').value || "未备注";
@@ -600,9 +600,25 @@
                 item.scanCount = (item.scanCount || 0) + 1;
                 if (item.scanCount >= 5) {
                     history = history.filter(x => x.id !== id);
+                    delete qrInstances[id]; // 移除缓存
                 }
                 localStorage.setItem('my_qr_list_auto', JSON.stringify(history));
-                renderMemberList();
+                
+                // 仅局部更新该卡片的文字与进度，避免整体刷新引发的闪烁
+                updateMemberCardDOM(item);
+                if (item.scanCount >= 5) {
+                    renderMemberList(); // 满5次消失时重新渲染整个列表
+                }
+            }
+        }
+
+        function updateMemberCardDOM(item) {
+            let cardElem = document.getElementById(`member-card-${item.id}`);
+            if (cardElem) {
+                let progressElem = cardElem.querySelector('.scan-progress');
+                if (progressElem) {
+                    progressElem.innerText = `🔄 已扫次数: ${item.scanCount} / 5 （点击卡片算作扫码一次）`;
+                }
             }
         }
 
@@ -610,6 +626,7 @@
             let history = JSON.parse(localStorage.getItem('my_qr_list_auto') || '[]');
             history = history.filter(item => item.id !== id);
             localStorage.setItem('my_qr_list_auto', JSON.stringify(history));
+            delete qrInstances[id];
             renderMemberList();
         }
 
@@ -622,6 +639,7 @@
             
             if (confirm("确定要清空所有的会员二维码记录吗？此操作无法撤销！")) {
                 localStorage.removeItem('my_qr_list_auto');
+                qrInstances = {};
                 renderMemberList();
             }
         }
@@ -634,6 +652,7 @@
             history.forEach(item => {
                 let div = document.createElement('div');
                 div.className = 'item member-item';
+                div.id = `member-card-${item.id}`;
                 let qrId = "qr-" + item.id;
                 let currentCount = item.scanCount || 0;
                 
@@ -649,24 +668,4 @@
                         <div class="item-phone">${item.content}</div>
                         <div class="scan-progress">🔄 已扫次数: ${currentCount} / 5 （点击卡片算作扫码一次）</div>
                     </div>
-                    <div class="qr-box" id="${qrId}"></div>
-                `;
-                listDiv.appendChild(div);
-
-                try {
-                    new QRCode(document.getElementById(qrId), {
-                        text: item.content,
-                        width: 150,
-                        height: 150,
-                        colorDark : "#000000",
-                        colorLight : "#ffffff",
-                        correctLevel : QRCode.CorrectLevel.H
-                    });
-                } catch (e) {
-                    console.error("二维码生成失败:", e);
-                }
-            });
-        }
-    </script>
-</body>
-</html>
+                    <div class="qr-box
