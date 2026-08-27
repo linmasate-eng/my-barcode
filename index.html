@@ -2,8 +2,8 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>7系条码与会员码综合助手（防键盘遮挡版）</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+    <title>7系条码与会员码综合助手（自由缩放版）</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
     <!-- 引入条码与二维码生成库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -43,7 +43,7 @@
             margin: 0; 
             padding: 0;
             color: var(--text-main);
-            overflow-x: hidden; /* 仅允许横向翻页，纵向正常滚动 */
+            overflow-x: hidden;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -59,7 +59,7 @@
             justify-content: space-between;
             align-items: center;
             z-index: 100;
-            pointer-events: none; /* 防止遮挡点击 */
+            pointer-events: none;
         }
         .top-bar > * {
             pointer-events: auto;
@@ -87,7 +87,7 @@
             cursor: pointer;
         }
 
-        /* 顶部导航指示条 */
+        /* 顶部联动标签 */
         .tab-container { 
             position: fixed;
             top: 50px;
@@ -118,30 +118,26 @@
         .tab-active-price { background: #d4a373 !important; color: #1e3324 !important; }
         .tab-active-member { background: #3a5a40 !important; color: #e9edc9 !important; border: 1px solid #588157; }
 
-        /* 横向翻页容器 */
+        /* 横向滑动容器：取消吸附，支持自由顺畅滑动 */
         .page-slider {
             display: flex;
             width: 100vw;
-            height: 100vh;
             overflow-x: auto;
             overflow-y: hidden;
-            scroll-snap-type: x mandatory;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
+            scroll-behavior: smooth;
         }
         .page-slider::-webkit-scrollbar { display: none; }
 
-        /* 每一页独立容器：采用绝对定位+独立滚动，完美解决键盘弹出的视口变形问题 */
+        /* 每一页独立容器：取消强制 100vh 死高度，允许高度自适应和自由缩放 */
         .page-pane {
             position: relative;
             width: 100vw;
-            height: 100vh;
+            min-height: 100vh;
             flex-shrink: 0;
-            scroll-snap-align: start;
-            scroll-snap-stop: always;
             box-sizing: border-box;
-            padding: 105px 15px 100px 15px; /* 顶部避开标签栏，底部留出充裕空间防止键盘遮挡 */
-            overflow-y: auto;
+            padding: 105px 15px 120px 15px; 
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -170,7 +166,7 @@
             border: 1px solid rgba(255, 255, 255, 0.2); 
             border-radius: 10px; 
             box-sizing: border-box; 
-            font-size: 16px; /* 手机端字体设为16px以上可有效防止浏览器自动放大页面 */
+            font-size: 16px; /* 防止手机端聚焦时自动全局放大 */
             outline: none; 
             background: rgba(19, 34, 23, 0.8);
             color: #fff;
@@ -241,7 +237,7 @@
     <div id="fixed-bg"></div>
 
     <div class="top-bar">
-        <div class="version-tag">🌲 助手 v4.3 (防遮挡版)</div>
+        <div class="version-tag">🌲 助手 v4.4 (自由缩放版)</div>
         <button class="bg-btn" onclick="document.getElementById('bg-file').click()">🖼️ 更换壁纸</button>
         <input type="file" id="bg-file" accept="image/*" style="display:none" onchange="changeBg(this)">
     </div>
@@ -253,7 +249,7 @@
         <button id="tab-member" class="tab-btn" onclick="scrollToPage(2)">会员码生成</button>
     </div>
 
-    <!-- 左右滑动翻页视口 -->
+    <!-- 左右滑动翻页视口 (已解除强制吸附) -->
     <div class="page-slider" id="pageSlider" onscroll="handleScrollSync()">
         
         <!-- 第 1 页：按重量生成 -->
