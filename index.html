@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>7系条码与会员码综合助手（精准防闪版）</title>
+    <title>7系条码与会员码综合助手（修复版）</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
     <!-- 引入条码与二维码生成库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
@@ -197,7 +197,7 @@
             width: 100%; 
             box-sizing: border-box; 
             text-align: center; 
-            transform: translateZ(0); /* 开启硬件加速，彻底防止重绘闪烁 */
+            transform: translateZ(0); 
             -webkit-tap-highlight-color: transparent; 
         }
         
@@ -211,7 +211,6 @@
         .serial-badge { display: inline-block; background: #588157; color: white; padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: bold; margin-right: 5px; vertical-align: middle; }
         .item-phone { color: #d4a373; font-family: monospace; font-size: 16px; font-weight: bold; margin-top: 2px; }
         
-        /* 专属计数触发条：只有点这个才会+1，视觉独立不影响二维码 */
         .scan-progress { 
             font-size: 12px; 
             color: #1e3324; 
@@ -252,7 +251,7 @@
     <div id="fixed-bg"></div>
 
     <div class="top-bar">
-        <div class="version-tag">🌲 助手 v4.9 (精准防闪版)</div>
+        <div class="version-tag">🌲 助手 v5.0 (完美修复版)</div>
         <button class="bg-btn" onclick="document.getElementById('bg-file').click()">🖼️ 更换壁纸</button>
         <input type="file" id="bg-file" accept="image/*" style="display:none" onchange="changeBg(this)">
     </div>
@@ -315,7 +314,7 @@
             <div id="list-price" class="history-list"></div>
         </div>
 
-        <!-- 第 3 页：会员码生成 (精准防闪版) -->
+        <!-- 第 3 页：会员码生成 -->
         <div class="page-pane">
             <div class="card">
                 <h2 style="margin:0 0 12px 0; color:#e9edc9; font-size:17px; text-align: center; font-weight:700;">会员二维码生成 (自动消减版)</h2>
@@ -559,7 +558,7 @@
             if (item) { item.discountVal = num; localStorage.setItem('l_p_v7', JSON.stringify(h)); renderPriceList(); }
         }
 
-        // --- 逻辑3: 会员码 (专属计数条点击版，二维码绝不闪烁) ---
+        // --- 逻辑3: 会员码 ---
         function saveMemberCode() {
             let phoneText = document.getElementById('m-phone').value;
             let note = document.getElementById('m-note').value || "未备注";
@@ -582,9 +581,8 @@
             initMemberList(); 
         }
 
-        // 只有点击下方的黄条时才触发+1和局部更新，完全不影响二维码区域
         function handleScanClick(id, event) {
-            event.stopPropagation(); // 阻止事件冒泡
+            event.stopPropagation();
 
             let history = JSON.parse(localStorage.getItem('my_qr_list_v7_exact') || '[]');
             let itemIndex = history.findIndex(x => x.id === id);
@@ -659,4 +657,5 @@
 
                 try {
                     new QRCode(document.getElementById(qrId), {
-                        tex
+                        text: item.content, width: 130, height: 130, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
+                    });
