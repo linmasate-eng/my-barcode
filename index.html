@@ -2,8 +2,8 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>7系条码与会员码综合助手（全屏翻页版）</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>7系条码与会员码综合助手（防键盘遮挡版）</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
     <!-- 引入条码与二维码生成库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -11,7 +11,7 @@
         :root { 
             --primary: #4e8752;     
             --secondary: #d4a373;   
-            --card-bg: rgba(30, 51, 36, 0.8);     
+            --card-bg: rgba(30, 51, 36, 0.85);     
             --card-border: rgba(255, 255, 255, 0.18); 
             --text-main: #e9edc9;   
             --text-sub: #b7b7a4;    
@@ -43,15 +43,15 @@
             margin: 0; 
             padding: 0;
             color: var(--text-main);
-            overflow: hidden; /* 禁止全局滚动，交由内部翻页容器控制 */
-            height: 100vh;
+            overflow-x: hidden; /* 仅允许横向翻页，纵向正常滚动 */
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
         
         .top-bar {
-            position: absolute;
+            position: fixed;
             top: 10px;
             left: 15px;
             right: 15px;
@@ -59,10 +59,14 @@
             justify-content: space-between;
             align-items: center;
             z-index: 100;
+            pointer-events: none; /* 防止遮挡点击 */
+        }
+        .top-bar > * {
+            pointer-events: auto;
         }
 
         .version-tag { 
-            background: rgba(23, 43, 30, 0.8); 
+            background: rgba(23, 43, 30, 0.85); 
             color: #d8f3dc; 
             padding: 5px 12px; 
             border-radius: 20px; 
@@ -73,7 +77,7 @@
         }
 
         .bg-btn {
-            background: rgba(23, 43, 30, 0.8);
+            background: rgba(23, 43, 30, 0.85);
             color: #d8f3dc;
             padding: 5px 12px;
             border-radius: 20px;
@@ -83,14 +87,14 @@
             cursor: pointer;
         }
 
-        /* 顶部导航指示条（类似APP分栏） */
+        /* 顶部导航指示条 */
         .tab-container { 
-            position: absolute;
-            top: 52px;
+            position: fixed;
+            top: 50px;
             display: flex; 
             width: calc(100% - 30px); 
             max-width: 400px; 
-            background: rgba(19, 34, 23, 0.85); 
+            background: rgba(19, 34, 23, 0.9); 
             border-radius: 14px; 
             padding: 3px;
             border: 1px solid var(--card-border);
@@ -114,37 +118,35 @@
         .tab-active-price { background: #d4a373 !important; color: #1e3324 !important; }
         .tab-active-member { background: #3a5a40 !important; color: #e9edc9 !important; border: 1px solid #588157; }
 
-        /* 核心：整页横向滚动翻页容器 (CSS Scroll Snap) */
+        /* 横向翻页容器 */
         .page-slider {
             display: flex;
             width: 100vw;
             height: 100vh;
             overflow-x: auto;
             overflow-y: hidden;
-            scroll-snap-type: x mandatory; /* 强制横向整页吸附 */
+            scroll-snap-type: x mandatory;
             -webkit-overflow-scrolling: touch;
-            scrollbar-width: none; /* Firefox 隐藏滚动条 */
+            scrollbar-width: none;
         }
-        .page-slider::-webkit-scrollbar {
-            display: none; /* Chrome/Safari/Edge 隐藏滚动条 */
-        }
+        .page-slider::-webkit-scrollbar { display: none; }
 
-        /* 每一页的独立全屏容器 */
+        /* 每一页独立容器：采用绝对定位+独立滚动，完美解决键盘弹出的视口变形问题 */
         .page-pane {
+            position: relative;
             width: 100vw;
             height: 100vh;
             flex-shrink: 0;
             scroll-snap-align: start;
-            scroll-snap-stop: always; /* 强制每次只翻一页 */
+            scroll-snap-stop: always;
+            box-sizing: border-box;
+            padding: 105px 15px 100px 15px; /* 顶部避开标签栏，底部留出充裕空间防止键盘遮挡 */
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
             align-items: center;
-            box-sizing: border-box;
-            padding: 105px 15px 30px 15px; /* 顶部留出导航栏空间，底部留白 */
-            overflow-y: auto; /* 允许单页内部纵向滚动查看历史记录 */
         }
 
-        /* 统一卡片与表单样式 */
         .card { 
             background: var(--card-bg); 
             padding: 20px; 
@@ -164,18 +166,18 @@
         
         input, textarea { 
             width: 100%; 
-            padding: 10px 12px; 
-            border: 1px solid rgba(255, 255, 255, 0.15); 
+            padding: 11px 12px; 
+            border: 1px solid rgba(255, 255, 255, 0.2); 
             border-radius: 10px; 
             box-sizing: border-box; 
-            font-size: 15px; 
+            font-size: 16px; /* 手机端字体设为16px以上可有效防止浏览器自动放大页面 */
             outline: none; 
-            background: rgba(19, 34, 23, 0.7);
+            background: rgba(19, 34, 23, 0.8);
             color: #fff;
             font-family: inherit;
         }
         textarea { resize: none; height: 80px; }
-        input:focus, textarea:focus { border-color: #588157; background: rgba(24, 43, 30, 0.9); }
+        input:focus, textarea:focus { border-color: #588157; background: rgba(24, 43, 30, 0.95); }
         
         .highlight-fill { background-color: rgba(56, 44, 31, 0.9) !important; border-color: #d4a373 !important; }
 
@@ -239,7 +241,7 @@
     <div id="fixed-bg"></div>
 
     <div class="top-bar">
-        <div class="version-tag">🌲 翻页助手 v4.2</div>
+        <div class="version-tag">🌲 助手 v4.3 (防遮挡版)</div>
         <button class="bg-btn" onclick="document.getElementById('bg-file').click()">🖼️ 更换壁纸</button>
         <input type="file" id="bg-file" accept="image/*" style="display:none" onchange="changeBg(this)">
     </div>
@@ -251,7 +253,7 @@
         <button id="tab-member" class="tab-btn" onclick="scrollToPage(2)">会员码生成</button>
     </div>
 
-    <!-- 左右滑动翻页视口 (Scroll Snap 驱动) -->
+    <!-- 左右滑动翻页视口 -->
     <div class="page-slider" id="pageSlider" onscroll="handleScrollSync()">
         
         <!-- 第 1 页：按重量生成 -->
@@ -324,7 +326,7 @@
 
     <script>
         window.onload = function() {
-            let savedBg = localStorage.getItem('custom_bg_img_snap');
+            let savedBg = localStorage.getItem('custom_bg_img_snap_v2');
             if (savedBg) {
                 document.getElementById('fixed-bg').style.backgroundImage = `url(${savedBg})`;
             }
@@ -335,7 +337,7 @@
             
             document.getElementById('p-sku').addEventListener('input', function() {
                 let sku = this.value.padStart(6, '0');
-                let map = JSON.parse(localStorage.getItem('sku_price_map_v6') || '{}');
+                let map = JSON.parse(localStorage.getItem('sku_price_map_v7') || '{}');
                 let unitInput = document.getElementById('p-unit');
                 if (map[sku]) {
                     unitInput.value = map[sku];
@@ -351,13 +353,12 @@
                 reader.onload = function(e) {
                     let base64Img = e.target.result;
                     document.getElementById('fixed-bg').style.backgroundImage = `url(${base64Img})`;
-                    localStorage.setItem('custom_bg_img_snap', base64Img);
+                    localStorage.setItem('custom_bg_img_snap_v2', base64Img);
                 };
                 reader.readAsDataURL(input.files[0]);
             }
         }
 
-        // 点击顶部标签，平滑滚动翻页到对应页面
         function scrollToPage(index) {
             const slider = document.getElementById('pageSlider');
             slider.scrollTo({
@@ -366,7 +367,6 @@
             });
         }
 
-        // 监听滚动位置，实时同步顶部标签的高亮状态
         function handleScrollSync() {
             const slider = document.getElementById('pageSlider');
             let index = Math.round(slider.scrollLeft / slider.clientWidth);
@@ -410,15 +410,15 @@
             if (!s || isNaN(w)) return alert("请输入货号和重量");
             
             let baseGrams = Math.round(w * 1000);
-            let h = JSON.parse(localStorage.getItem('l_w_v6') || '[]');
+            let h = JSON.parse(localStorage.getItem('l_w_v7') || '[]');
             h.unshift({ id: Date.now(), sku: s.padStart(6, '0'), baseGrams: baseGrams, originalWeightStr: w, note: n, discountEnabled: false, discountVal: 5.0 });
-            localStorage.setItem('l_w_v6', JSON.stringify(h));
+            localStorage.setItem('l_w_v7', JSON.stringify(h));
             document.getElementById('w-weight').value = "";
             renderWeightList();
         }
 
         function renderWeightList() {
-            let h = JSON.parse(localStorage.getItem('l_w_v6') || '[]');
+            let h = JSON.parse(localStorage.getItem('l_w_v7') || '[]');
             let l = document.getElementById('list-weight');
             l.innerHTML = h.map(i => {
                 let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
@@ -427,11 +427,11 @@
                 
                 return `
                 <div class="item">
-                    <button class="btn-del" onclick="del('l_w_v6',${i.id},'w')">×</button>
+                    <button class="btn-del" onclick="del('l_w_v7',${i.id},'w')">×</button>
                     <div class="discount-box">
-                        <label style="margin:0; cursor:pointer;"><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="toggleDiscount('l_w_v6', ${i.id}, this.checked)"> 开启折扣</label>
+                        <label style="margin:0; cursor:pointer;"><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="toggleDiscount('l_w_v7', ${i.id}, this.checked)"> 开启折扣</label>
                         <span>折扣:</span>
-                        <input type="number" step="0.1" min="1" max="9.9" value="${i.discountVal}" onchange="updateDiscountVal('l_w_v6', ${i.id}, this.value)">折
+                        <input type="number" step="0.1" min="1" max="9.9" value="${i.discountVal}" onchange="updateDiscountVal('l_w_v7', ${i.id}, this.value)">折
                     </div>
                     <div class="item-info">
                         <div class="item-note">${i.note}</div>
@@ -477,19 +477,19 @@
             if (baseGrams > 99999) return alert("重量超出限制");
             
             let sku = s.padStart(6, '0');
-            let map = JSON.parse(localStorage.getItem('sku_price_map_v6') || '{}');
+            let map = JSON.parse(localStorage.getItem('sku_price_map_v7') || '{}');
             map[sku] = u;
-            localStorage.setItem('sku_price_map_v6', JSON.stringify(map));
+            localStorage.setItem('sku_price_map_v7', JSON.stringify(map));
 
-            let h = JSON.parse(localStorage.getItem('l_p_v6') || '[]');
+            let h = JSON.parse(localStorage.getItem('l_p_v7') || '[]');
             h.unshift({ id: Date.now(), sku: sku, baseGrams: baseGrams, totalPrice: t, unitPrice: u, note: n, discountEnabled: false, discountVal: 5.0 });
-            localStorage.setItem('l_p_v6', JSON.stringify(h));
+            localStorage.setItem('l_p_v7', JSON.stringify(h));
             document.getElementById('p-total').value = "";
             renderPriceList();
         }
 
         function renderPriceList() {
-            let h = JSON.parse(localStorage.getItem('l_p_v6') || '[]');
+            let h = JSON.parse(localStorage.getItem('l_p_v7') || '[]');
             let l = document.getElementById('list-price');
             l.innerHTML = h.map(i => {
                 let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
@@ -498,7 +498,7 @@
                 
                 return `
                 <div class="item">
-                    <button class="btn-del" onclick="del('l_p_v6',${i.id},'p')">×</button>
+                    <button class="btn-del" onclick="del('l_p_v7',${i.id},'p')">×</button>
                     <div class="discount-box">
                         <label style="margin:0; cursor:pointer;"><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="togglePriceDiscount(${i.id}, this.checked)"> 开启折扣</label>
                         <span>折扣:</span>
@@ -523,16 +523,16 @@
         }
 
         function togglePriceDiscount(id, isChecked) {
-            let h = JSON.parse(localStorage.getItem('l_p_v6') || '[]');
+            let h = JSON.parse(localStorage.getItem('l_p_v7') || '[]');
             let item = h.find(x => x.id === id);
-            if (item) { item.discountEnabled = isChecked; localStorage.setItem('l_p_v6', JSON.stringify(h)); renderPriceList(); }
+            if (item) { item.discountEnabled = isChecked; localStorage.setItem('l_p_v7', JSON.stringify(h)); renderPriceList(); }
         }
         function updatePriceDiscountVal(id, val) {
             let num = parseFloat(val);
             if (isNaN(num) || num <= 0 || num >= 10) return;
-            let h = JSON.parse(localStorage.getItem('l_p_v6') || '[]');
+            let h = JSON.parse(localStorage.getItem('l_p_v7') || '[]');
             let item = h.find(x => x.id === id);
-            if (item) { item.discountVal = num; localStorage.setItem('l_p_v6', JSON.stringify(h)); renderPriceList(); }
+            if (item) { item.discountVal = num; localStorage.setItem('l_p_v7', JSON.stringify(h)); renderPriceList(); }
         }
 
         // --- 逻辑3: 会员码 ---
@@ -542,7 +542,7 @@
             if (!phoneText.trim()) return alert("请输入至少一个会员号");
 
             let phoneArray = phoneText.split('\n').map(p => p.trim()).filter(p => p !== "");
-            let history = JSON.parse(localStorage.getItem('my_qr_list_snap') || '[]');
+            let history = JSON.parse(localStorage.getItem('my_qr_list_v7') || '[]');
             let maxSerial = history.reduce((max, item) => Math.max(max, item.serial || 0), 0);
 
             let newItems = [];
@@ -552,7 +552,7 @@
             });
 
             history = newItems.concat(history);
-            localStorage.setItem('my_qr_list_snap', JSON.stringify(history));
+            localStorage.setItem('my_qr_list_v7', JSON.stringify(history));
             document.getElementById('m-phone').value = "";
             document.getElementById('m-note').value = "";
             renderMemberList();
@@ -560,41 +560,41 @@
 
         function handleMemberCardClick(id, event) {
             if (event.target.classList.contains('btn-del')) return;
-            let history = JSON.parse(localStorage.getItem('my_qr_list_snap') || '[]');
+            let history = JSON.parse(localStorage.getItem('my_qr_list_v7') || '[]');
             let item = history.find(x => x.id === id);
             if (item) {
                 item.scanCount = (item.scanCount || 0) + 1;
                 if (item.scanCount >= 5) history = history.filter(x => x.id !== id);
-                localStorage.setItem('my_qr_list_snap', JSON.stringify(history));
+                localStorage.setItem('my_qr_list_v7', JSON.stringify(history));
                 renderMemberList();
             }
         }
 
         function deleteMember(id) {
-            let history = JSON.parse(localStorage.getItem('my_qr_list_snap') || '[]');
+            let history = JSON.parse(localStorage.getItem('my_qr_list_v7') || '[]');
             history = history.filter(item => item.id !== id);
-            localStorage.setItem('my_qr_list_snap', JSON.stringify(history));
+            localStorage.setItem('my_qr_list_v7', JSON.stringify(history));
             renderMemberList();
         }
 
         function clearAllMembers() {
-            let history = JSON.parse(localStorage.getItem('my_qr_list_snap') || '[]');
+            let history = JSON.parse(localStorage.getItem('my_qr_list_v7') || '[]');
             if (history.length === 0) return alert("当前没有记录！");
             if (confirm("确定要清空所有会员记录吗？")) {
-                localStorage.removeItem('my_qr_list_snap');
+                localStorage.removeItem('my_qr_list_v7');
                 renderMemberList();
             }
         }
 
         function renderMemberList() {
-            let history = JSON.parse(localStorage.getItem('my_qr_list_snap') || '[]');
+            let history = JSON.parse(localStorage.getItem('my_qr_list_v7') || '[]');
             let listDiv = document.getElementById('list-member');
             listDiv.innerHTML = ""; 
 
             history.forEach(item => {
                 let div = document.createElement('div');
                 div.className = 'item item-member';
-                let qrId = "qr-snap-" + item.id;
+                let qrId = "qr-v7-" + item.id;
                 div.onclick = (e) => handleMemberCardClick(item.id, e);
 
                 div.innerHTML = `
@@ -605,7 +605,7 @@
                             <span class="item-note">${item.note}</span>
                         </div>
                         <div class="item-phone">${item.content}</div>
-                        <div class="scan-progress">🔄 已扫次数: ${item.scanCount || 0} / 5 （点击卡片计1次）</div>
+                        <div class="scan-progress">🔄 已扫次数: ${item.scanCount || 0} / 5 （点击卡片计1px）</div>
                     </div>
                     <div class="qr-box" id="${qrId}"></div>
                 `;
