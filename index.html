@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>7系条码与会员码综合助手</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
     <!-- 引入条码与二维码生成库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -229,8 +229,19 @@
         }
 
         canvas { width: 100% !important; height: auto; margin-top: 8px; background: #ffffff; border-radius: 10px; padding: 6px 0; }
-        .qr-box { display: flex; justify-content: center; margin-top: 8px; }
-        .qr-box img, .qr-box canvas { padding: 6px; background: #fff; border-radius: 8px; display: block; }
+        
+        /* 💡 关键修改：严格限制二维码容器内部的 canvas/img 尺寸，防止加载瞬间撑满变大 */
+        .qr-box { display: flex; justify-content: center; margin-top: 8px; min-height: 150px; }
+        .qr-box img, .qr-box canvas { 
+            width: 150px !important; 
+            height: 150px !important; 
+            max-width: 150px !important;
+            max-height: 150px !important;
+            padding: 6px; 
+            background: #fff; 
+            border-radius: 8px; 
+            display: block; 
+        }
     </style>
 </head>
 <body>
@@ -663,10 +674,4 @@
                         correctLevel : QRCode.CorrectLevel.H
                     });
                 } catch (e) {
-                    console.error("二维码生成失败:", e);
-                }
-            });
-        }
-    </script>
-</body>
-</html>
+                    console.error("二
