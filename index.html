@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>7系条码与会员码综合助手（修复版）</title>
+    <title>7系条码与会员码综合助手（平滑居中版）</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
     <!-- 引入条码与二维码生成库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
@@ -48,7 +48,6 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            touch-action: manipulation;
         }
         
         .top-bar {
@@ -197,33 +196,20 @@
             width: 100%; 
             box-sizing: border-box; 
             text-align: center; 
-            transform: translateZ(0); 
-            -webkit-tap-highlight-color: transparent; 
         }
+        .item-member { cursor: pointer; }
         
-        .item-info { text-align: left; border-bottom: 1px dashed rgba(255,255,255,0.15); margin-bottom: 12px; padding-bottom: 10px; padding-right: 25px; display: flex; flex-direction: column; gap: 4px; }
+        .item-info { text-align: center; border-bottom: 1px dashed rgba(255,255,255,0.15); margin-bottom: 12px; padding-bottom: 10px; }
+        .item-info-left { text-align: left; padding-right: 25px; display: flex; flex-direction: column; gap: 4px; }
         
         .item-note { font-weight: 700; color: #e9edc9; font-size: 17px; }
         .item-sub { font-size: 13px; color: #b7b7a4; margin-top: 4px; font-weight: 500; }
         .item-sub b { color: #d4a373; }
         .item-code { font-family: monospace; color: #ccd5ae; font-size: 18px; font-weight: 700; margin-top: 8px; display: block; letter-spacing: 1.5px; } 
 
-        .serial-badge { display: inline-block; background: #588157; color: white; padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: bold; margin-right: 5px; vertical-align: middle; }
+        .serial-badge { display: inline-block; background: #588157; color: white; padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: bold; margin-right: 5px; }
         .item-phone { color: #d4a373; font-family: monospace; font-size: 16px; font-weight: bold; margin-top: 2px; }
-        
-        .scan-progress { 
-            font-size: 12px; 
-            color: #1e3324; 
-            background: #ffb703;
-            padding: 6px 10px;
-            border-radius: 8px;
-            font-weight: bold; 
-            margin-top: 8px; 
-            cursor: pointer;
-            display: inline-block;
-            transition: background 0.2s;
-        }
-        .scan-progress:active { background: #e09f03; }
+        .scan-progress { font-size: 11px; color: #f4a261; font-weight: bold; margin-top: 3px; }
 
         .discount-box { 
             display: flex; align-items: center; justify-content: center; gap: 8px; 
@@ -251,7 +237,7 @@
     <div id="fixed-bg"></div>
 
     <div class="top-bar">
-        <div class="version-tag">🌲 助手 v5.0 (完美修复版)</div>
+        <div class="version-tag">🌲 助手 v4.5 (智能居中版)</div>
         <button class="bg-btn" onclick="document.getElementById('bg-file').click()">🖼️ 更换壁纸</button>
         <input type="file" id="bg-file" accept="image/*" style="display:none" onchange="changeBg(this)">
     </div>
@@ -317,7 +303,7 @@
         <!-- 第 3 页：会员码生成 -->
         <div class="page-pane">
             <div class="card">
-                <h2 style="margin:0 0 12px 0; color:#e9edc9; font-size:17px; text-align: center; font-weight:700;">会员二维码生成 (自动消减版)</h2>
+                <h2 style="margin:0 0 12px 0; color:#e9edc9; font-size:17px; text-align: center; font-weight:700;">会员二维码 (满5次自动消失)</h2>
                 <div class="input-group">
                     <label>会员号 / 手机号 (支持批量换行)</label>
                     <textarea id="m-phone" placeholder="输入会员手机号，多个号码请换行&#10;13800000001"></textarea>
@@ -345,7 +331,7 @@
 
             renderWeightList();
             renderPriceList();
-            initMemberList(); 
+            renderMemberList();
             
             document.getElementById('p-sku').addEventListener('input', function() {
                 let sku = this.value.padStart(6, '0');
@@ -379,6 +365,7 @@
             });
         }
 
+        // 联动标签与松手自动对齐居中
         function handleScrollSync() {
             const slider = document.getElementById('pageSlider');
             let index = Math.round(slider.scrollLeft / slider.clientWidth);
@@ -395,6 +382,7 @@
             else if (index === 1) tp.className = 'tab-btn tab-active-price';
             else if (index === 2) tm.className = 'tab-btn tab-active-member';
 
+            // 当手指停止滑动后，自动轻柔吸附居中当前页（避免半截卡住，且不影响放大时的自由拖动）
             clearTimeout(scrollTimeout);
             scrollTimeout = setTimeout(() => {
                 let targetLeft = index * slider.clientWidth;
@@ -565,7 +553,7 @@
             if (!phoneText.trim()) return alert("请输入至少一个会员号");
 
             let phoneArray = phoneText.split('\n').map(p => p.trim()).filter(p => p !== "");
-            let history = JSON.parse(localStorage.getItem('my_qr_list_v7_exact') || '[]');
+            let history = JSON.parse(localStorage.getItem('my_qr_list_v7') || '[]');
             let maxSerial = history.reduce((max, item) => Math.max(max, item.serial || 0), 0);
 
             let newItems = [];
@@ -575,81 +563,60 @@
             });
 
             history = newItems.concat(history);
-            localStorage.setItem('my_qr_list_v7_exact', JSON.stringify(history));
+            localStorage.setItem('my_qr_list_v7', JSON.stringify(history));
             document.getElementById('m-phone').value = "";
             document.getElementById('m-note').value = "";
-            initMemberList(); 
+            renderMemberList();
         }
 
-        function handleScanClick(id, event) {
-            event.stopPropagation();
-
-            let history = JSON.parse(localStorage.getItem('my_qr_list_v7_exact') || '[]');
-            let itemIndex = history.findIndex(x => x.id === id);
-            if (itemIndex !== -1) {
-                let item = history[itemIndex];
+        function handleMemberCardClick(id, event) {
+            if (event.target.classList.contains('btn-del')) return;
+            let history = JSON.parse(localStorage.getItem('my_qr_list_v7') || '[]');
+            let item = history.find(x => x.id === id);
+            if (item) {
                 item.scanCount = (item.scanCount || 0) + 1;
-
-                if (item.scanCount >= 5) {
-                    history.splice(itemIndex, 1);
-                    localStorage.setItem('my_qr_list_v7_exact', JSON.stringify(history));
-                    let cardEl = document.getElementById('member-card-' + id);
-                    if (cardEl) {
-                        cardEl.style.transition = "all 0.3s ease";
-                        cardEl.style.transform = "scale(0.9)";
-                        cardEl.style.opacity = "0";
-                        setTimeout(() => cardEl.remove(), 300);
-                    }
-                } else {
-                    localStorage.setItem('my_qr_list_v7_exact', JSON.stringify(history));
-                    let progressEl = document.getElementById('scan-text-' + id);
-                    if (progressEl) {
-                        progressEl.innerText = `🔄 已扫次数: ${item.scanCount} / 5 （点此+1）`;
-                    }
-                }
+                if (item.scanCount >= 5) history = history.filter(x => x.id !== id);
+                localStorage.setItem('my_qr_list_v7', JSON.stringify(history));
+                renderMemberList();
             }
         }
 
         function deleteMember(id) {
-            let history = JSON.parse(localStorage.getItem('my_qr_list_v7_exact') || '[]');
+            let history = JSON.parse(localStorage.getItem('my_qr_list_v7') || '[]');
             history = history.filter(item => item.id !== id);
-            localStorage.setItem('my_qr_list_v7_exact', JSON.stringify(history));
-            let cardEl = document.getElementById('member-card-' + id);
-            if (cardEl) cardEl.remove();
+            localStorage.setItem('my_qr_list_v7', JSON.stringify(history));
+            renderMemberList();
         }
 
         function clearAllMembers() {
-            let history = JSON.parse(localStorage.getItem('my_qr_list_v7_exact') || '[]');
+            let history = JSON.parse(localStorage.getItem('my_qr_list_v7') || '[]');
             if (history.length === 0) return alert("当前没有记录！");
             if (confirm("确定要清空所有会员记录吗？")) {
-                localStorage.removeItem('my_qr_list_v7_exact');
-                initMemberList();
+                localStorage.removeItem('my_qr_list_v7');
+                renderMemberList();
             }
         }
 
-        function initMemberList() {
-            let history = JSON.parse(localStorage.getItem('my_qr_list_v7_exact') || '[]');
+        function renderMemberList() {
+            let history = JSON.parse(localStorage.getItem('my_qr_list_v7') || '[]');
             let listDiv = document.getElementById('list-member');
             listDiv.innerHTML = ""; 
 
             history.forEach(item => {
                 let div = document.createElement('div');
-                div.className = 'item';
-                div.id = 'member-card-' + item.id;
+                div.className = 'item item-member';
                 let qrId = "qr-v7-" + item.id;
-                let currentCount = item.scanCount || 0;
-                
+                div.onclick = (e) => handleMemberCardClick(item.id, e);
+
                 div.innerHTML = `
                     <button class="btn-del" onclick="deleteMember(${item.id})">×</button>
-                    <div class="item-info">
+                    <div class="item-info item-info-left">
                         <div>
                             <span class="serial-badge">NO.${item.serial}</span>
                             <span class="item-note">${item.note}</span>
                         </div>
                         <div class="item-phone">${item.content}</div>
-                        <div>
-                            <span class="scan-progress" id="scan-text-${item.id}" onclick="handleScanClick(${item.id}, event)">🔄 已扫次数: ${currentCount} / 5 （点此+1）</span>
-                        </div>
+                        <div class="scan-progress">🔄 已扫次数: ${item.scanCount || 0} / 5 （点击卡片计1px）</div>
                     </div>
                     <div class="qr-box" id="${qrId}"></div>
                 `;
@@ -659,3 +626,15 @@
                     new QRCode(document.getElementById(qrId), {
                         text: item.content, width: 130, height: 130, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
                     });
+                } catch (e) {}
+            });
+        }
+
+        function del(key, id, type) {
+            let h = JSON.parse(localStorage.getItem(key) || '[]').filter(x => x.id !== id);
+            localStorage.setItem(key, JSON.stringify(h));
+            type === 'w' ? renderWeightList() : renderPriceList();
+        }
+    </script>
+</body>
+</html>
