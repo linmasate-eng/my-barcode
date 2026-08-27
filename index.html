@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>7系条码与会员码综合助手（左右滑动版）</title>
+    <title>7系条码与会员码综合助手（流畅滑动版）</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <!-- 引入条码与二维码生成库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
@@ -90,7 +90,7 @@
         }
         .bg-btn:hover { background: rgba(34, 63, 42, 0.85); }
 
-        /* 滑动指示器 / 标签栏 */
+        /* 顶部标签栏 */
         .tab-container { 
             display: flex; 
             width: 100%; 
@@ -127,11 +127,12 @@
             max-width: 400px;
             overflow: hidden;
             position: relative;
+            touch-action: pan-y; /* 允许垂直滚动，交由JS处理横向手势 */
         }
         .slider-track {
             display: flex;
-            width: 300%; /* 3个面板平铺 */
-            transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+            width: 300%; 
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
             will-change: transform;
         }
         .slider-panel {
@@ -197,7 +198,6 @@
         
         .history-list { width: 100%; margin-top: 25px; }
         
-        /* 历史项通用面板 */
         .item { 
             background: var(--card-bg); 
             padding: 24px; 
@@ -250,16 +250,15 @@
 </head>
 <body>
 
-    <!-- 森林渐变与树叶材质底层 -->
     <div id="fixed-bg"></div>
 
     <div class="top-bar">
-        <div class="version-tag">🌲 综合助手 v4.1 (滑动版)</div>
+        <div class="version-tag">🌲 综合助手 v4.2</div>
         <button class="bg-btn" onclick="document.getElementById('bg-file').click()">🖼️ 更换壁纸</button>
         <input type="file" id="bg-file" accept="image/*" style="display:none" onchange="changeBg(this)">
     </div>
 
-    <!-- 顶部标签栏（也可点击直接跳页） -->
+    <!-- 顶部标签栏（点击或滑动皆可联动） -->
     <div class="tab-container">
         <button id="tab-weight" class="tab-btn tab-active-weight" onclick="switchTab(0)">按重量生成</button>
         <button id="tab-price" class="tab-btn" onclick="switchTab(1)">价格反推</button>
@@ -343,7 +342,7 @@
         let currentIndex = 0;
         let startX = 0;
         let startY = 0;
-        let isDragging = false;
+        let isSwiping = false;
 
         window.onload = function() {
             let savedBg = localStorage.getItem('custom_bg_img_forest_all');
@@ -366,7 +365,6 @@
                 }
             });
 
-            // 初始化触控左右滑动监听
             initTouchSwipe();
         };
 
@@ -382,7 +380,7 @@
             }
         }
 
-        // 切换面板标签与滚动
+        // 切换面板标签
         function switchTab(index) {
             currentIndex = index;
             const track = document.getElementById('slider-track');
@@ -405,44 +403,42 @@
             }
         }
 
-        // 绑定触摸滑动事件 (支持流畅的手势左右滑动切换)
+        // 修复后的轻量触摸滑动监听
         function initTouchSwipe() {
             const viewport = document.getElementById('slider-viewport');
 
             viewport.addEventListener('touchstart', (e) => {
-                // 如果触摸点在输入框、文本域内，不拦截横向滑动，防止无法光标选字
-                if(['INPUT', 'TEXTAREA', 'BUTTON'].includes(e.target.tagName)) return;
                 startX = e.touches[0].clientX;
                 startY = e.touches[0].clientY;
-                isDragging = true;
+                isSwiping = true;
             }, {passive: true});
 
             viewport.addEventListener('touchmove', (e) => {
-                if (!isDragging) return;
+                if (!isSwiping) return;
                 let currentX = e.touches[0].clientX;
                 let currentY = e.touches[0].clientY;
                 let diffX = currentX - startX;
                 let diffY = currentY - startY;
 
-                // 如果用户上下滑动幅度更大，则判定为上下滚动页面，取消左右滑切换
-                if (Math.abs(diffY) > Math.abs(diffX)) {
-                    isDragging = false;
+                // 如果上下滚动幅度明显大于横向滑动，则取消横向切换，确保页面能顺畅上下滚动
+                if (Math.abs(diffY) > Math.abs(diffX) + 10) {
+                    isSwiping = false;
                 }
             }, {passive: true});
 
             viewport.addEventListener('touchend', (e) => {
-                if (!isDragging) return;
-                isDragging = false;
+                if (!isSwiping) return;
+                isSwiping = false;
                 let endX = e.changedTouches[0].clientX;
                 let diffX = endX - startX;
 
-                // 滑动距离超过 50px 触发切换
-                if (diffX < -50 && currentIndex < 2) {
+                // 左右滑动阈值设为 40px，更加灵敏
+                if (diffX < -40 && currentIndex < 2) {
                     switchTab(currentIndex + 1);
-                } else if (diffX > 50 && currentIndex > 0) {
+                } else if (diffX > 40 && currentIndex > 0) {
                     switchTab(currentIndex - 1);
                 }
-            });
+            }, {passive: true});
         }
 
         // --- 逻辑1: 重量条码部分 ---
@@ -615,7 +611,7 @@
             if (item) { item.discountVal = num; localStorage.setItem('l_p_v5', JSON.stringify(h)); renderPriceList(); }
         }
 
-        // --- 逻辑3: 会员码部分（自动消减与计数） ---
+        // --- 逻辑3: 会员码部分 ---
         function saveMemberCode() {
             let phoneText = document.getElementById('m-phone').value;
             let note = document.getElementById('m-note').value || "未备注";
@@ -670,4 +666,9 @@
 
         function renderMemberList() {
             let history = JSON.parse(localStorage.getItem('my_qr_list_auto_forest') || '[]');
-            let listDiv = document.g
+            let listDiv = document.getElementById('list-member');
+            listDiv.innerHTML = ""; 
+
+            history.forEach(item => {
+                let div = document.createElement('div');
+                d
