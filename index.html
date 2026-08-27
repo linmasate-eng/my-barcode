@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <title>7系条码与会员码综合助手</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
-    <!-- 引入条码生成库 -->
+    <!-- 引入条码与二维码生成库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
-    <!-- 引入稳定版 qrcodejs 库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { 
@@ -63,7 +62,9 @@
             z-index: 100;
             pointer-events: none;
         }
-        .top-bar > * { pointer-events: auto; }
+        .top-bar > * {
+            pointer-events: auto;
+        }
 
         .version-tag { 
             background: rgba(23, 43, 30, 0.85); 
@@ -87,7 +88,7 @@
             cursor: pointer;
         }
 
-        /* 顶部联动标签 */
+        /* 顶部联动标签（3个标签平分） */
         .tab-container { 
             position: fixed;
             top: 50px;
@@ -130,6 +131,7 @@
         }
         .page-slider::-webkit-scrollbar { display: none; }
 
+        /* 每一页独立容器 */
         .page-pane {
             position: relative;
             width: 100vw;
@@ -227,7 +229,7 @@
         }
 
         canvas { width: 100% !important; height: auto; margin-top: 8px; background: #ffffff; border-radius: 10px; padding: 6px 0; }
-        .qr-box { display: flex; justify-content: center; margin-top: 8px; min-height: 150px; align-items: center; }
+        .qr-box { display: flex; justify-content: center; margin-top: 8px; }
         .qr-box img, .qr-box canvas { padding: 6px; background: #fff; border-radius: 8px; display: block; }
     </style>
 </head>
@@ -236,12 +238,12 @@
     <div id="fixed-bg"></div>
 
     <div class="top-bar">
-        <div class="version-tag">🌲 综合助手 v4.9 (稳定直出版)</div>
+        <div class="version-tag">🌲 综合助手 v4.7</div>
         <button class="bg-btn" onclick="document.getElementById('bg-file').click()">🖼️ 更换壁纸</button>
         <input type="file" id="bg-file" accept="image/*" style="display:none" onchange="changeBg(this)">
     </div>
 
-    <!-- 顶部联动标签 -->
+    <!-- 顶部联动标签（3标签） -->
     <div class="tab-container">
         <button id="tab-weight" class="tab-btn tab-active-weight" onclick="scrollToPage(0)">按重量生成</button>
         <button id="tab-price" class="tab-btn" onclick="scrollToPage(1)">价格反推</button>
@@ -299,7 +301,7 @@
             <div id="list-price" class="history-list"></div>
         </div>
 
-        <!-- 第 3 页：会员码生成 -->
+        <!-- 第 3 页：会员码生成（自动消减版） -->
         <div class="page-pane">
             <div class="card">
                 <h2 style="margin:0 0 12px 0; color:#90caf9; font-size:17px; text-align: center; font-weight:700;">会员二维码生成 (自动消减)</h2>
@@ -364,6 +366,7 @@
             });
         }
 
+        // 联动标签与松手自动对齐居中
         function handleScrollSync() {
             const slider = document.getElementById('pageSlider');
             let index = Math.round(slider.scrollLeft / slider.clientWidth);
@@ -450,15 +453,13 @@
                 </div>`;
             }).join('');
             
-            setTimeout(() => {
-                h.forEach(i => {
-                    try {
-                        let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
-                        let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
-                        JsBarcode(`#cw-${i.id}`, code, {format:"EAN13", width:2.2, height:60, displayValue:false});
-                    } catch(e) {}
-                });
-            }, 50);
+            h.forEach(i => {
+                try {
+                    let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
+                    let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
+                    JsBarcode(`#cw-${i.id}`, code, {format:"EAN13", width:2.2, height:60, displayValue:false});
+                } catch(e) {}
+            });
         }
 
         function toggleDiscount(key, id, isChecked) {
@@ -529,15 +530,13 @@
                 </div>`;
             }).join('');
             
-            setTimeout(() => {
-                h.forEach(i => {
-                    try {
-                        let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
-                        let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
-                        JsBarcode(`#cp-${i.id}`, code, {format:"EAN13", width:2.2, height:60, displayValue:false});
-                    } catch(e) {}
-                });
-            }, 50);
+            h.forEach(i => {
+                try {
+                    let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
+                    let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
+                    JsBarcode(`#cp-${i.id}`, code, {format:"EAN13", width:2.2, height:60, displayValue:false});
+                } catch(e) {}
+            });
         }
 
         function togglePriceDiscount(id, isChecked) {
@@ -558,7 +557,7 @@
             renderPriceList();
         }
 
-        // --- 逻辑3: 会员码生成（稳定直出版） ---
+        // --- 逻辑3: 会员码生成（自动消减） ---
         function saveMemberCode() {
             let phoneText = document.getElementById('m-phone').value;
             let note = document.getElementById('m-note').value || "未备注";
@@ -603,7 +602,7 @@
                     history = history.filter(x => x.id !== id);
                 }
                 localStorage.setItem('my_qr_list_auto', JSON.stringify(history));
-                renderMemberList(); // 重新渲染列表以更新计数和状态
+                renderMemberList();
             }
         }
 
@@ -635,7 +634,6 @@
             history.forEach(item => {
                 let div = document.createElement('div');
                 div.className = 'item member-item';
-                div.id = `member-card-${item.id}`;
                 let qrId = "qr-" + item.id;
                 let currentCount = item.scanCount || 0;
                 
@@ -654,16 +652,21 @@
                     <div class="qr-box" id="${qrId}"></div>
                 `;
                 listDiv.appendChild(div);
-            });
 
-            // 统一在 DOM 挂载后再生成二维码，确保容器尺寸已经就绪
-            setTimeout(() => {
-                history.forEach(item => {
-                    let qrContainer = document.getElementById("qr-" + item.id);
-                    if (qrContainer && qrContainer.innerHTML.trim() === "") {
-                        try {
-                            new QRCode(qrContainer, {
-                                text: item.content,
-                                width: 150,
-                                height: 150,
-                           
+                try {
+                    new QRCode(document.getElementById(qrId), {
+                        text: item.content,
+                        width: 150,
+                        height: 150,
+                        colorDark : "#000000",
+                        colorLight : "#ffffff",
+                        correctLevel : QRCode.CorrectLevel.H
+                    });
+                } catch (e) {
+                    console.error("二维码生成失败:", e);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
