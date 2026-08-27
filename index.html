@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>7系条码与会员码综合助手（流畅滑动版）</title>
+    <title>7系条码与会员码综合助手（原生滚动版）</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <!-- 引入条码与二维码生成库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
@@ -121,23 +121,32 @@
         .tab-active-price { background: #d4a373 !important; color: #1e3324 !important; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         .tab-active-member { background: #3a5a40 !important; color: #e9edc9 !important; border: 1px solid #588157; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
 
-        /* 左右滑动视口容器 */
+        /* 原生横向滚动视口容器（利用 CSS Scroll Snap，100% 顺滑且绝对不会失效） */
         .slider-viewport {
             width: 100%;
             max-width: 400px;
-            overflow: hidden;
-            position: relative;
-            touch-action: pan-y; /* 允许垂直滚动，交由JS处理横向手势 */
+            overflow-x: auto;
+            overflow-y: hidden;
+            display: flex;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* 隐藏滚动条 */
         }
+        .slider-viewport::-webkit-scrollbar {
+            display: none;
+        }
+
         .slider-track {
             display: flex;
-            width: 300%; 
-            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-            will-change: transform;
-        }
-        .slider-panel {
-            width: 33.3333%;
+            width: 100%;
             flex-shrink: 0;
+        }
+
+        .slider-panel {
+            width: 100%;
+            flex: 0 0 100%;
+            scroll-snap-align: start;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -253,24 +262,24 @@
     <div id="fixed-bg"></div>
 
     <div class="top-bar">
-        <div class="version-tag">🌲 综合助手 v4.2</div>
+        <div class="version-tag">🌲 综合助手 v4.3</div>
         <button class="bg-btn" onclick="document.getElementById('bg-file').click()">🖼️ 更换壁纸</button>
         <input type="file" id="bg-file" accept="image/*" style="display:none" onchange="changeBg(this)">
     </div>
 
-    <!-- 顶部标签栏（点击或滑动皆可联动） -->
+    <!-- 顶部标签栏（点击可平滑滚动跳转） -->
     <div class="tab-container">
         <button id="tab-weight" class="tab-btn tab-active-weight" onclick="switchTab(0)">按重量生成</button>
         <button id="tab-price" class="tab-btn" onclick="switchTab(1)">价格反推</button>
         <button id="tab-member" class="tab-btn" onclick="switchTab(2)">会员码生成</button>
     </div>
 
-    <!-- 左右滑动视口 -->
+    <!-- 原生横向滚动视口 -->
     <div class="slider-viewport" id="slider-viewport">
-        <div class="slider-track" id="slider-track">
+        <div class="slider-track">
             
             <!-- 面板 1：按重量生成 -->
-            <div class="slider-panel">
+            <div class="slider-panel" id="panel-0">
                 <div class="card">
                     <h2 style="margin:0 0 15px 0; color:#ccd5ae; font-size:18px; text-align: center; font-weight:700;">录入重量生成条码</h2>
                     <div class="input-group">
@@ -291,7 +300,7 @@
             </div>
 
             <!-- 面板 2：价格反推 -->
-            <div class="slider-panel">
+            <div class="slider-panel" id="panel-1">
                 <div class="card">
                     <h2 style="margin:0 0 15px 0; color:#d4a373; font-size:18px; text-align: center; font-weight:700;">输入价格反推重量</h2>
                     <div class="input-group">
@@ -318,7 +327,7 @@
             </div>
 
             <!-- 面板 3：会员码生成 -->
-            <div class="slider-panel">
+            <div class="slider-panel" id="panel-2">
                 <div class="card">
                     <h2 style="margin:0 0 15px 0; color:#e9edc9; font-size:18px; text-align: center; font-weight:700;">会员二维码 (满5次自动消失)</h2>
                     <div class="input-group">
@@ -339,11 +348,6 @@
     </div>
 
     <script>
-        let currentIndex = 0;
-        let startX = 0;
-        let startY = 0;
-        let isSwiping = false;
-
         window.onload = function() {
             let savedBg = localStorage.getItem('custom_bg_img_forest_all');
             if (savedBg) {
@@ -365,7 +369,12 @@
                 }
             });
 
-            initTouchSwipe();
+            // 监听原生滚动，实时高亮对应的标签按钮
+            const viewport = document.getElementById('slider-viewport');
+            viewport.addEventListener('scroll', () => {
+                let index = Math.round(viewport.scrollLeft / viewport.clientWidth);
+                updateTabStyle(index);
+            }, {passive: true});
         };
 
         function changeBg(input) {
@@ -380,12 +389,21 @@
             }
         }
 
-        // 切换面板标签
+        // 点击顶部标签时滚动到对应面板
         function switchTab(index) {
-            currentIndex = index;
-            const track = document.getElementById('slider-track');
-            track.style.transform = `translateX(-${currentIndex * 33.3333}%)`;
+            const viewport = document.getElementById('slider-viewport');
+            const targetPanel = document.getElementById('panel-' + index);
+            if (targetPanel) {
+                viewport.scrollTo({
+                    left: targetPanel.offsetLeft - viewport.offsetLeft,
+                    behavior: 'smooth'
+                });
+            }
+            updateTabStyle(index);
+        }
 
+        // 更新顶部按钮高亮样式
+        function updateTabStyle(index) {
             const tw = document.getElementById('tab-weight');
             const tp = document.getElementById('tab-price');
             const tm = document.getElementById('tab-member');
@@ -401,44 +419,6 @@
             } else if (index === 2) {
                 tm.className = 'tab-btn tab-active-member';
             }
-        }
-
-        // 修复后的轻量触摸滑动监听
-        function initTouchSwipe() {
-            const viewport = document.getElementById('slider-viewport');
-
-            viewport.addEventListener('touchstart', (e) => {
-                startX = e.touches[0].clientX;
-                startY = e.touches[0].clientY;
-                isSwiping = true;
-            }, {passive: true});
-
-            viewport.addEventListener('touchmove', (e) => {
-                if (!isSwiping) return;
-                let currentX = e.touches[0].clientX;
-                let currentY = e.touches[0].clientY;
-                let diffX = currentX - startX;
-                let diffY = currentY - startY;
-
-                // 如果上下滚动幅度明显大于横向滑动，则取消横向切换，确保页面能顺畅上下滚动
-                if (Math.abs(diffY) > Math.abs(diffX) + 10) {
-                    isSwiping = false;
-                }
-            }, {passive: true});
-
-            viewport.addEventListener('touchend', (e) => {
-                if (!isSwiping) return;
-                isSwiping = false;
-                let endX = e.changedTouches[0].clientX;
-                let diffX = endX - startX;
-
-                // 左右滑动阈值设为 40px，更加灵敏
-                if (diffX < -40 && currentIndex < 2) {
-                    switchTab(currentIndex + 1);
-                } else if (diffX > 40 && currentIndex > 0) {
-                    switchTab(currentIndex - 1);
-                }
-            }, {passive: true});
         }
 
         // --- 逻辑1: 重量条码部分 ---
@@ -671,4 +651,18 @@
 
             history.forEach(item => {
                 let div = document.createElement('div');
-                d
+                div.className = 'item item-member';
+                let qrId = "qr-" + item.id;
+                let currentCount = item.scanCount || 0;
+                
+                div.onclick = (e) => handleMemberCardClick(item.id, e);
+
+                div.innerHTML = `
+                    <button class="btn-del" onclick="deleteMember(${item.id})">×</button>
+                    <div class="item-info item-info-left">
+                        <div>
+                            <span class="serial-badge">NO.${item.serial}</span>
+                            <span class="item-note">${item.note}</span>
+                        </div>
+                        <div class="item-phone">${item.content}</div>
+     
