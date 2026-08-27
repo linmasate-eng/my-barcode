@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>7系条码与会员码综合助手（左右滑动版）</title>
+    <title>7系条码与会员码综合助手（全屏翻页版）</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <!-- 引入条码与二维码生成库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
@@ -11,18 +11,15 @@
         :root { 
             --primary: #4e8752;     
             --secondary: #d4a373;   
-            --card-bg: rgba(30, 51, 36, 0.75);     /* 半透明深绿面板 */
-            --card-border: rgba(255, 255, 255, 0.15); /* 半透明精致边框 */
+            --card-bg: rgba(30, 51, 36, 0.8);     
+            --card-border: rgba(255, 255, 255, 0.18); 
             --text-main: #e9edc9;   
             --text-sub: #b7b7a4;    
         }
 
         #fixed-bg {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            top: 0; left: 0; width: 100vw; height: 100vh;
             background: linear-gradient(135deg, #0f1d13 0%, #1b3322 40%, #284b30 80%, #132217 100%);
             background-size: cover;
             background-position: center;
@@ -30,7 +27,6 @@
             pointer-events: none;
         }
 
-        /* 森林树叶纹理叠加层 */
         #fixed-bg::after {
             content: "";
             position: absolute;
@@ -43,308 +39,292 @@
         }
 
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            min-height: 100vh;
-            padding: 20px 15px 150px 15px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             margin: 0; 
+            padding: 0;
             color: var(--text-main);
-            overflow-x: hidden;
+            overflow: hidden; /* 禁止全局滚动，交由内部翻页容器控制 */
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         
         .top-bar {
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            right: 15px;
             display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
+            justify-content: space-between;
             align-items: center;
+            z-index: 100;
         }
 
         .version-tag { 
-            background: rgba(23, 43, 30, 0.7); 
+            background: rgba(23, 43, 30, 0.8); 
             color: #d8f3dc; 
-            padding: 6px 14px; 
+            padding: 5px 12px; 
             border-radius: 20px; 
             font-size: 12px; 
             font-weight: 500; 
-            letter-spacing: 1px;
             border: 1px solid var(--card-border);
             backdrop-filter: blur(8px);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
 
         .bg-btn {
-            background: rgba(23, 43, 30, 0.7);
+            background: rgba(23, 43, 30, 0.8);
             color: #d8f3dc;
-            padding: 6px 12px;
+            padding: 5px 12px;
             border-radius: 20px;
             font-size: 12px;
-            font-weight: 500;
             border: 1px solid var(--card-border);
             backdrop-filter: blur(8px);
             cursor: pointer;
-            transition: background 0.2s;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
-        .bg-btn:hover { background: rgba(34, 63, 42, 0.85); }
 
-        /* 三栏切换标签容器 */
+        /* 顶部导航指示条（类似APP分栏） */
         .tab-container { 
+            position: absolute;
+            top: 52px;
             display: flex; 
-            width: 100%; 
+            width: calc(100% - 30px); 
             max-width: 400px; 
-            margin-bottom: 20px; 
-            background: rgba(19, 34, 23, 0.75); 
-            border-radius: 16px; 
-            padding: 4px;
+            background: rgba(19, 34, 23, 0.85); 
+            border-radius: 14px; 
+            padding: 3px;
             border: 1px solid var(--card-border);
             backdrop-filter: blur(10px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            z-index: 10;
+            z-index: 100;
         }
         .tab-btn { 
             flex: 1; 
-            padding: 10px 4px; 
+            padding: 8px 4px; 
             border: none; 
-            border-radius: 12px; 
-            font-size: 13px; 
+            border-radius: 11px; 
+            font-size: 12px; 
             font-weight: 600; 
             cursor: pointer; 
             color: var(--text-sub); 
             background: transparent; 
-            transition: all 0.3s ease;
+            transition: all 0.25s ease;
             text-align: center;
         }
-        .tab-active-weight { background: #4e8752 !important; color: #fff !important; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-        .tab-active-price { background: #d4a373 !important; color: #1e3324 !important; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-        .tab-active-member { background: #3a5a40 !important; color: #e9edc9 !important; border: 1px solid #588157; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .tab-active-weight { background: #4e8752 !important; color: #fff !important; }
+        .tab-active-price { background: #d4a373 !important; color: #1e3324 !important; }
+        .tab-active-member { background: #3a5a40 !important; color: #e9edc9 !important; border: 1px solid #588157; }
 
-        /* 左右滑动视口容器 */
-        .swipe-viewport {
-            width: 100%;
-            max-width: 400px;
-            overflow: hidden;
-            position: relative;
-        }
-        .swipe-track {
+        /* 核心：整页横向滚动翻页容器 (CSS Scroll Snap) */
+        .page-slider {
             display: flex;
-            width: 300%; /* 三栏宽度 */
-            transition: transform 0.35s cubic-bezier(0.1, 0.8, 0.3, 1);
+            width: 100vw;
+            height: 100vh;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-snap-type: x mandatory; /* 强制横向整页吸附 */
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Firefox 隐藏滚动条 */
         }
-        .swipe-panel {
-            width: 33.3333%;
+        .page-slider::-webkit-scrollbar {
+            display: none; /* Chrome/Safari/Edge 隐藏滚动条 */
+        }
+
+        /* 每一页的独立全屏容器 */
+        .page-pane {
+            width: 100vw;
+            height: 100vh;
             flex-shrink: 0;
+            scroll-snap-align: start;
+            scroll-snap-stop: always; /* 强制每次只翻一页 */
             display: flex;
             flex-direction: column;
             align-items: center;
             box-sizing: border-box;
+            padding: 105px 15px 30px 15px; /* 顶部留出导航栏空间，底部留白 */
+            overflow-y: auto; /* 允许单页内部纵向滚动查看历史记录 */
         }
 
-        /* 半透明毛玻璃卡片面板 */
+        /* 统一卡片与表单样式 */
         .card { 
             background: var(--card-bg); 
-            padding: 24px; 
-            border-radius: 24px; 
+            padding: 20px; 
+            border-radius: 22px; 
             border: 1px solid var(--card-border);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
             width: 100%; 
+            max-width: 380px;
             box-sizing: border-box; 
+            flex-shrink: 0;
         }
 
-        .input-group { margin-bottom: 14px; text-align: left; }
-        label { font-size: 13px; font-weight: 600; color: #b7b7a4; display: block; margin-bottom: 5px; }
+        .input-group { margin-bottom: 12px; text-align: left; }
+        label { font-size: 12px; font-weight: 600; color: #b7b7a4; display: block; margin-bottom: 4px; }
         
         input, textarea { 
             width: 100%; 
-            padding: 12px; 
+            padding: 10px 12px; 
             border: 1px solid rgba(255, 255, 255, 0.15); 
-            border-radius: 12px; 
+            border-radius: 10px; 
             box-sizing: border-box; 
-            font-size: 16px; 
+            font-size: 15px; 
             outline: none; 
-            background: rgba(19, 34, 23, 0.6);
+            background: rgba(19, 34, 23, 0.7);
             color: #fff;
-            transition: all 0.3s;
             font-family: inherit;
         }
-        textarea { resize: none; height: 100px; }
-        input:focus, textarea:focus { border-color: #588157; box-shadow: 0 0 0 3px rgba(88, 129, 87, 0.25); background: rgba(24, 43, 30, 0.8); }
+        textarea { resize: none; height: 80px; }
+        input:focus, textarea:focus { border-color: #588157; background: rgba(24, 43, 30, 0.9); }
         
-        .highlight-fill { background-color: rgba(56, 44, 31, 0.8) !important; border-color: #d4a373 !important; }
+        .highlight-fill { background-color: rgba(56, 44, 31, 0.9) !important; border-color: #d4a373 !important; }
 
-        button.btn-weight { 
-            width: 100%; padding: 14px; background: linear-gradient(135deg, #4e8752, #386641); 
-            color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 5px; box-shadow: 0 4px 15px rgba(56, 102, 65, 0.4);
-        }
-        button.btn-price { 
-            width: 100%; padding: 14px; background: linear-gradient(135deg, #d4a373, #bc6c25); 
-            color: #1e3324; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 5px; box-shadow: 0 4px 15px rgba(188, 108, 37, 0.4);
-        }
-        button.btn-member { 
-            width: 100%; padding: 14px; background: linear-gradient(135deg, #588157, #3a5a40); 
-            color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 5px; box-shadow: 0 4px 15px rgba(88, 129, 87, 0.4);
-        }
-        button.btn-clear { 
-            width: 100%; padding: 10px; background: rgba(180, 50, 50, 0.6); 
-            color: #ffcccc; border: 1px solid rgba(255,100,100,0.3); border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 8px; 
-        }
-        button:active { transform: scale(0.98); }
+        button.btn-weight { width: 100%; padding: 12px; background: linear-gradient(135deg, #4e8752, #386641); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 4px; }
+        button.btn-price { width: 100%; padding: 12px; background: linear-gradient(135deg, #d4a373, #bc6c25); color: #1e3324; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 4px; }
+        button.btn-member { width: 100%; padding: 12px; background: linear-gradient(135deg, #588157, #3a5a40); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 4px; }
+        button.btn-clear { width: 100%; padding: 9px; background: rgba(180, 50, 50, 0.6); color: #ffcccc; border: 1px solid rgba(255,100,100,0.3); border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 6px; }
         
-        .history-list { width: 100%; margin-top: 25px; }
+        .history-list { width: 100%; max-width: 380px; margin-top: 20px; display: flex; flex-direction: column; align-items: center; }
         
-        /* 历史项通用面板 */
         .item { 
             background: var(--card-bg); 
-            padding: 24px; 
-            border-radius: 24px; 
-            margin-bottom: 25px; 
+            padding: 20px; 
+            border-radius: 22px; 
+            margin-bottom: 20px; 
             position: relative; 
             border: 1px solid var(--card-border);
             backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            width: 100%; 
+            box-sizing: border-box; 
             text-align: center; 
         }
-        .item-member { cursor: pointer; transition: background 0.2s; }
-        .item-member:active { background: rgba(40, 70, 48, 0.85); }
+        .item-member { cursor: pointer; }
         
-        .item-info { text-align: center; border-bottom: 1px dashed rgba(255,255,255,0.15); margin-bottom: 15px; padding-bottom: 12px; }
-        .item-info-left { text-align: left; padding-right: 30px; display: flex; flex-direction: column; gap: 4px; }
+        .item-info { text-align: center; border-bottom: 1px dashed rgba(255,255,255,0.15); margin-bottom: 12px; padding-bottom: 10px; }
+        .item-info-left { text-align: left; padding-right: 25px; display: flex; flex-direction: column; gap: 4px; }
         
-        .item-note { font-weight: 700; color: #e9edc9; font-size: 18px; }
-        .item-sub { font-size: 14px; color: #b7b7a4; margin-top: 6px; font-weight: 500; }
+        .item-note { font-weight: 700; color: #e9edc9; font-size: 17px; }
+        .item-sub { font-size: 13px; color: #b7b7a4; margin-top: 4px; font-weight: 500; }
         .item-sub b { color: #d4a373; }
-        .item-code { font-family: monospace; color: #ccd5ae; font-size: 19px; font-weight: 700; margin-top: 10px; display: block; letter-spacing: 1.5px; } 
+        .item-code { font-family: monospace; color: #ccd5ae; font-size: 18px; font-weight: 700; margin-top: 8px; display: block; letter-spacing: 1.5px; } 
 
-        .serial-badge { display: inline-block; background: #588157; color: white; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; margin-right: 6px; }
-        .item-phone { color: #d4a373; font-family: monospace; font-size: 17px; font-weight: bold; margin-top: 2px; }
-        .scan-progress { font-size: 12px; color: #f4a261; font-weight: bold; margin-top: 4px; }
+        .serial-badge { display: inline-block; background: #588157; color: white; padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: bold; margin-right: 5px; }
+        .item-phone { color: #d4a373; font-family: monospace; font-size: 16px; font-weight: bold; margin-top: 2px; }
+        .scan-progress { font-size: 11px; color: #f4a261; font-weight: bold; margin-top: 3px; }
 
         .discount-box { 
             display: flex; align-items: center; justify-content: center; gap: 8px; 
-            margin-bottom: 14px; font-size: 14px; color: #b7b7a4; 
-            background: rgba(19, 34, 23, 0.6); padding: 8px 12px; border-radius: 12px; 
+            margin-bottom: 12px; font-size: 13px; color: #b7b7a4; 
+            background: rgba(19, 34, 23, 0.6); padding: 6px 10px; border-radius: 10px; 
             border: 1px solid rgba(255, 255, 255, 0.1); 
         }
-        .discount-box input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: #d4a373; }
-        .discount-box input[type="number"] { width: 60px; padding: 4px; text-align: center; font-size: 14px; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; background: rgba(30, 51, 36, 0.8); color: #fff; }
+        .discount-box input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: #d4a373; }
+        .discount-box input[type="number"] { width: 50px; padding: 3px; text-align: center; font-size: 13px; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 6px; background: rgba(30, 51, 36, 0.8); color: #fff; }
 
         .btn-del { 
-            position: absolute; right: 14px; top: 14px; color: #ffcccc; border: none; 
-            background: rgba(180, 50, 50, 0.6); border-radius: 50%; width: 30px; height: 30px; 
-            font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; 
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2); z-index: 2;
+            position: absolute; right: 12px; top: 12px; color: #ffcccc; border: none; 
+            background: rgba(180, 50, 50, 0.6); border-radius: 50%; width: 28px; height: 28px; 
+            font-size: 15px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; 
+            z-index: 2;
         }
 
-        canvas { 
-            width: 100% !important; height: auto; margin-top: 10px; background: #ffffff; border-radius: 12px; padding: 8px 0; box-shadow: inset 0 2px 6px rgba(0,0,0,0.1); 
-        }
-        .qr-box { display: flex; justify-content: center; margin-top: 10px; }
-        .qr-box img, .qr-box canvas { padding: 6px; background: #fff; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); display: block; }
+        canvas { width: 100% !important; height: auto; margin-top: 8px; background: #ffffff; border-radius: 10px; padding: 6px 0; }
+        .qr-box { display: flex; justify-content: center; margin-top: 8px; }
+        .qr-box img, .qr-box canvas { padding: 5px; background: #fff; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); display: block; }
     </style>
 </head>
 <body>
 
-    <!-- 森林渐变与树叶材质底层 -->
     <div id="fixed-bg"></div>
 
     <div class="top-bar">
-        <div class="version-tag">🌲 综合助手 v4.1 (滑动版)</div>
+        <div class="version-tag">🌲 翻页助手 v4.2</div>
         <button class="bg-btn" onclick="document.getElementById('bg-file').click()">🖼️ 更换壁纸</button>
         <input type="file" id="bg-file" accept="image/*" style="display:none" onchange="changeBg(this)">
     </div>
 
-    <!-- 三栏切换按钮 -->
+    <!-- 顶部联动标签 -->
     <div class="tab-container">
-        <button id="tab-weight" class="tab-btn tab-active-weight" onclick="switchTab(0)">按重量生成</button>
-        <button id="tab-price" class="tab-btn" onclick="switchTab(1)">价格反推</button>
-        <button id="tab-member" class="tab-btn" onclick="switchTab(2)">会员码生成</button>
+        <button id="tab-weight" class="tab-btn tab-active-weight" onclick="scrollToPage(0)">按重量生成</button>
+        <button id="tab-price" class="tab-btn" onclick="scrollToPage(1)">价格反推</button>
+        <button id="tab-member" class="tab-btn" onclick="scrollToPage(2)">会员码生成</button>
     </div>
 
-    <!-- 左右滑动视口 -->
-    <div class="swipe-viewport" id="swipe-viewport">
-        <div class="swipe-track" id="swipe-track">
-            
-            <!-- 1. 按重量生成区块 -->
-            <div class="swipe-panel" id="panel-weight">
-                <div class="card">
-                    <h2 style="margin:0 0 15px 0; color:#ccd5ae; font-size:18px; text-align: center; font-weight:700;">录入重量生成条码</h2>
-                    <div class="input-group">
-                        <label>货号</label>
-                        <input type="tel" id="w-sku" placeholder="如: 16">
-                    </div>
-                    <div class="input-group">
-                        <label>重量 (kg)</label>
-                        <input type="number" id="w-weight" step="0.001" placeholder="如: 0.525">
-                    </div>
-                    <div class="input-group">
-                        <label>备注</label>
-                        <input type="text" id="w-note" placeholder="如: 鸡蛋">
-                    </div>
-                    <button class="btn-weight" onclick="saveWeightCode()">生成并保存条码</button>
+    <!-- 左右滑动翻页视口 (Scroll Snap 驱动) -->
+    <div class="page-slider" id="pageSlider" onscroll="handleScrollSync()">
+        
+        <!-- 第 1 页：按重量生成 -->
+        <div class="page-pane">
+            <div class="card">
+                <h2 style="margin:0 0 12px 0; color:#ccd5ae; font-size:17px; text-align: center; font-weight:700;">录入重量生成条码</h2>
+                <div class="input-group">
+                    <label>货号</label>
+                    <input type="tel" id="w-sku" placeholder="如: 16">
                 </div>
-                <div id="list-weight" class="history-list"></div>
-            </div>
-
-            <!-- 2. 价格反推区块 -->
-            <div class="swipe-panel" id="panel-price">
-                <div class="card">
-                    <h2 style="margin:0 0 15px 0; color:#d4a373; font-size:18px; text-align: center; font-weight:700;">输入价格反推重量</h2>
-                    <div class="input-group">
-                        <label>货号 (自动填单价)</label>
-                        <input type="tel" id="p-sku" placeholder="输入货号">
-                    </div>
-                    <div style="display:flex; gap:10px;">
-                        <div class="input-group" style="flex:1;">
-                            <label>单价 (元/kg)</label>
-                            <input type="number" id="p-unit" step="0.01" placeholder="单价">
-                        </div>
-                        <div class="input-group" style="flex:1;">
-                            <label>总价 (元)</label>
-                            <input type="number" id="p-total" step="0.01" placeholder="总额">
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label>备注</label>
-                        <input type="text" id="p-note" placeholder="备注">
-                    </div>
-                    <button class="btn-price" onclick="savePriceCode()">换算并生成条码</button>
+                <div class="input-group">
+                    <label>重量 (kg)</label>
+                    <input type="number" id="w-weight" step="0.001" placeholder="如: 0.525">
                 </div>
-                <div id="list-price" class="history-list"></div>
-            </div>
-
-            <!-- 3. 会员码生成区块 -->
-            <div class="swipe-panel" id="panel-member">
-                <div class="card">
-                    <h2 style="margin:0 0 15px 0; color:#e9edc9; font-size:18px; text-align: center; font-weight:700;">会员二维码 (满5次自动消失)</h2>
-                    <div class="input-group">
-                        <label>会员号 / 手机号 (支持批量换行)</label>
-                        <textarea id="m-phone" placeholder="输入会员手机号，多个号码请换行&#10;13800000001&#10;13800000002"></textarea>
-                    </div>
-                    <div class="input-group">
-                        <label>统一备注 (选填)</label>
-                        <input type="text" id="m-note" placeholder="如：VIP批次">
-                    </div>
-                    <button class="btn-member" onclick="saveMemberCode()">批量生成会员码</button>
-                    <button class="btn-clear" onclick="clearAllMembers()">清空所有会员记录</button>
+                <div class="input-group">
+                    <label>备注</label>
+                    <input type="text" id="w-note" placeholder="如: 鸡蛋">
                 </div>
-                <div id="list-member" class="history-list"></div>
+                <button class="btn-weight" onclick="saveWeightCode()">生成并保存条码</button>
             </div>
-
+            <div id="list-weight" class="history-list"></div>
         </div>
+
+        <!-- 第 2 页：价格反推 -->
+        <div class="page-pane">
+            <div class="card">
+                <h2 style="margin:0 0 12px 0; color:#d4a373; font-size:17px; text-align: center; font-weight:700;">输入价格反推重量</h2>
+                <div class="input-group">
+                    <label>货号 (自动填单价)</label>
+                    <input type="tel" id="p-sku" placeholder="输入货号">
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <div class="input-group" style="flex:1;">
+                        <label>单价 (元/kg)</label>
+                        <input type="number" id="p-unit" step="0.01" placeholder="单价">
+                    </div>
+                    <div class="input-group" style="flex:1;">
+                        <label>总价 (元)</label>
+                        <input type="number" id="p-total" step="0.01" placeholder="总额">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>备注</label>
+                    <input type="text" id="p-note" placeholder="备注">
+                </div>
+                <button class="btn-price" onclick="savePriceCode()">换算并生成条码</button>
+            </div>
+            <div id="list-price" class="history-list"></div>
+        </div>
+
+        <!-- 第 3 页：会员码生成 -->
+        <div class="page-pane">
+            <div class="card">
+                <h2 style="margin:0 0 12px 0; color:#e9edc9; font-size:17px; text-align: center; font-weight:700;">会员二维码 (满5次自动消失)</h2>
+                <div class="input-group">
+                    <label>会员号 / 手机号 (支持批量换行)</label>
+                    <textarea id="m-phone" placeholder="输入会员手机号，多个号码请换行&#10;13800000001"></textarea>
+                </div>
+                <div class="input-group">
+                    <label>统一备注 (选填)</label>
+                    <input type="text" id="m-note" placeholder="如：VIP批次">
+                </div>
+                <button class="btn-member" onclick="saveMemberCode()">批量生成会员码</button>
+                <button class="btn-clear" onclick="clearAllMembers()">清空所有会员记录</button>
+            </div>
+            <div id="list-member" class="history-list"></div>
+        </div>
+
     </div>
 
     <script>
-        let currentIndex = 0;
-        let startX = 0;
-        let startY = 0;
-        let isSwiping = false;
-
         window.onload = function() {
-            let savedBg = localStorage.getItem('custom_bg_img_forest_all');
+            let savedBg = localStorage.getItem('custom_bg_img_snap');
             if (savedBg) {
                 document.getElementById('fixed-bg').style.backgroundImage = `url(${savedBg})`;
             }
@@ -355,49 +335,13 @@
             
             document.getElementById('p-sku').addEventListener('input', function() {
                 let sku = this.value.padStart(6, '0');
-                let map = JSON.parse(localStorage.getItem('sku_price_map_v5') || '{}');
+                let map = JSON.parse(localStorage.getItem('sku_price_map_v6') || '{}');
                 let unitInput = document.getElementById('p-unit');
                 if (map[sku]) {
                     unitInput.value = map[sku];
                     unitInput.classList.add('highlight-fill');
                     setTimeout(() => unitInput.classList.remove('highlight-fill'), 600);
                 }
-            });
-
-            // 绑定触摸左右滑动事件
-            const viewport = document.getElementById('swipe-viewport');
-            viewport.addEventListener('touchstart', e => {
-                startX = e.touches[0].clientX;
-                startY = e.touches[0].clientY;
-                isSwiping = true;
-            }, {passive: true});
-
-            viewport.addEventListener('touchmove', e => {
-                if (!isSwiping) return;
-                let currentX = e.touches[0].clientX;
-                let currentY = e.touches[0].clientY;
-                let diffX = currentX - startX;
-                let diffY = currentY - startY;
-
-                // 如果水平滑动距离大于垂直滑动，阻止默认上下滚动以防干扰
-                if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 20) {
-                    // 可以按需决定是否 preventDefault
-                }
-            }, {passive: true});
-
-            viewport.addEventListener('touchend', e => {
-                if (!isSwiping) return;
-                let endX = e.changedTouches[0].clientX;
-                let diffX = endX - startX;
-
-                if (Math.abs(diffX) > 50) {
-                    if (diffX > 0 && currentIndex > 0) {
-                        switchTab(currentIndex - 1); // 向右滑动 -> 上一页
-                    } else if (diffX < 0 && currentIndex < 2) {
-                        switchTab(currentIndex + 1); // 向左滑动 -> 下一页
-                    }
-                }
-                isSwiping = false;
             });
         };
 
@@ -407,18 +351,26 @@
                 reader.onload = function(e) {
                     let base64Img = e.target.result;
                     document.getElementById('fixed-bg').style.backgroundImage = `url(${base64Img})`;
-                    localStorage.setItem('custom_bg_img_forest_all', base64Img);
+                    localStorage.setItem('custom_bg_img_snap', base64Img);
                 };
                 reader.readAsDataURL(input.files[0]);
             }
         }
 
-        // 切换面板标签与滑动动画
-        function switchTab(index) {
-            currentIndex = index;
-            const track = document.getElementById('swipe-track');
-            track.style.transform = `translateX(-${index * 33.3333}%)`;
+        // 点击顶部标签，平滑滚动翻页到对应页面
+        function scrollToPage(index) {
+            const slider = document.getElementById('pageSlider');
+            slider.scrollTo({
+                left: slider.clientWidth * index,
+                behavior: 'smooth'
+            });
+        }
 
+        // 监听滚动位置，实时同步顶部标签的高亮状态
+        function handleScrollSync() {
+            const slider = document.getElementById('pageSlider');
+            let index = Math.round(slider.scrollLeft / slider.clientWidth);
+            
             const tw = document.getElementById('tab-weight');
             const tp = document.getElementById('tab-price');
             const tm = document.getElementById('tab-member');
@@ -427,16 +379,12 @@
             tp.className = 'tab-btn'; 
             tm.className = 'tab-btn';
 
-            if (index === 0) {
-                tw.className = 'tab-btn tab-active-weight';
-            } else if (index === 1) {
-                tp.className = 'tab-btn tab-active-price';
-            } else if (index === 2) {
-                tm.className = 'tab-btn tab-active-member';
-            }
+            if (index === 0) tw.className = 'tab-btn tab-active-weight';
+            else if (index === 1) tp.className = 'tab-btn tab-active-price';
+            else if (index === 2) tm.className = 'tab-btn tab-active-member';
         }
 
-        // --- 逻辑1: 重量条码部分 ---
+        // --- 逻辑1: 重量条码 ---
         function calculateEAN13(first12) {
             let sO = 0, sE = 0;
             for (let i = 0; i < 12; i++) {
@@ -450,8 +398,7 @@
         function getComputedGrams(item, currentDiscount, isEnabled) {
             let baseGrams = item.baseGrams;
             if (isEnabled && currentDiscount > 0 && currentDiscount <= 10) {
-                let scaledGrams = (baseGrams * 10) / currentDiscount;
-                return Math.round(scaledGrams);
+                return Math.round((baseGrams * 10) / currentDiscount);
             }
             return baseGrams;
         }
@@ -463,23 +410,15 @@
             if (!s || isNaN(w)) return alert("请输入货号和重量");
             
             let baseGrams = Math.round(w * 1000);
-            let h = JSON.parse(localStorage.getItem('l_w_v5') || '[]');
-            h.unshift({
-                id: Date.now(),
-                sku: s.padStart(6, '0'),
-                baseGrams: baseGrams,
-                originalWeightStr: w,
-                note: n,
-                discountEnabled: false,
-                discountVal: 5.0
-            });
-            localStorage.setItem('l_w_v5', JSON.stringify(h));
+            let h = JSON.parse(localStorage.getItem('l_w_v6') || '[]');
+            h.unshift({ id: Date.now(), sku: s.padStart(6, '0'), baseGrams: baseGrams, originalWeightStr: w, note: n, discountEnabled: false, discountVal: 5.0 });
+            localStorage.setItem('l_w_v6', JSON.stringify(h));
             document.getElementById('w-weight').value = "";
             renderWeightList();
         }
 
         function renderWeightList() {
-            let h = JSON.parse(localStorage.getItem('l_w_v5') || '[]');
+            let h = JSON.parse(localStorage.getItem('l_w_v6') || '[]');
             let l = document.getElementById('list-weight');
             l.innerHTML = h.map(i => {
                 let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
@@ -488,11 +427,11 @@
                 
                 return `
                 <div class="item">
-                    <button class="btn-del" onclick="del('l_w_v5',${i.id},'w')">×</button>
+                    <button class="btn-del" onclick="del('l_w_v6',${i.id},'w')">×</button>
                     <div class="discount-box">
-                        <label style="margin:0; cursor:pointer;"><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="toggleDiscount('l_w_v5', ${i.id}, this.checked)"> 开启折扣</label>
+                        <label style="margin:0; cursor:pointer;"><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="toggleDiscount('l_w_v6', ${i.id}, this.checked)"> 开启折扣</label>
                         <span>折扣:</span>
-                        <input type="number" step="0.1" min="1" max="9.9" value="${i.discountVal}" onchange="updateDiscountVal('l_w_v5', ${i.id}, this.value)">折
+                        <input type="number" step="0.1" min="1" max="9.9" value="${i.discountVal}" onchange="updateDiscountVal('l_w_v6', ${i.id}, this.value)">折
                     </div>
                     <div class="item-info">
                         <div class="item-note">${i.note}</div>
@@ -507,7 +446,7 @@
                 try {
                     let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
                     let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
-                    JsBarcode(`#cw-${i.id}`, code, {format:"EAN13", width:2.5, height:70, displayValue:false});
+                    JsBarcode(`#cw-${i.id}`, code, {format:"EAN13", width:2.2, height:60, displayValue:false});
                 } catch(e) {}
             });
         }
@@ -515,11 +454,7 @@
         function toggleDiscount(key, id, isChecked) {
             let h = JSON.parse(localStorage.getItem(key) || '[]');
             let item = h.find(x => x.id === id);
-            if (item) {
-                item.discountEnabled = isChecked;
-                localStorage.setItem(key, JSON.stringify(h));
-                renderWeightList();
-            }
+            if (item) { item.discountEnabled = isChecked; localStorage.setItem(key, JSON.stringify(h)); renderWeightList(); }
         }
 
         function updateDiscountVal(key, id, val) {
@@ -527,14 +462,10 @@
             if (isNaN(num) || num <= 0 || num >= 10) return;
             let h = JSON.parse(localStorage.getItem(key) || '[]');
             let item = h.find(x => x.id === id);
-            if (item) {
-                item.discountVal = num;
-                localStorage.setItem(key, JSON.stringify(h));
-                renderWeightList();
-            }
+            if (item) { item.discountVal = num; localStorage.setItem(key, JSON.stringify(h)); renderWeightList(); }
         }
 
-        // --- 逻辑2: 价格反推部分 ---
+        // --- 逻辑2: 价格反推 ---
         function savePriceCode() {
             let s = document.getElementById('p-sku').value;
             let u = parseFloat(document.getElementById('p-unit').value);
@@ -546,21 +477,19 @@
             if (baseGrams > 99999) return alert("重量超出限制");
             
             let sku = s.padStart(6, '0');
-            let map = JSON.parse(localStorage.getItem('sku_price_map_v5') || '{}');
+            let map = JSON.parse(localStorage.getItem('sku_price_map_v6') || '{}');
             map[sku] = u;
-            localStorage.setItem('sku_price_map_v5', JSON.stringify(map));
+            localStorage.setItem('sku_price_map_v6', JSON.stringify(map));
 
-            let h = JSON.parse(localStorage.getItem('l_p_v5') || '[]');
-            h.unshift({
-                id: Date.now(), sku: sku, baseGrams: baseGrams, totalPrice: t, unitPrice: u, note: n, discountEnabled: false, discountVal: 5.0
-            });
-            localStorage.setItem('l_p_v5', JSON.stringify(h));
+            let h = JSON.parse(localStorage.getItem('l_p_v6') || '[]');
+            h.unshift({ id: Date.now(), sku: sku, baseGrams: baseGrams, totalPrice: t, unitPrice: u, note: n, discountEnabled: false, discountVal: 5.0 });
+            localStorage.setItem('l_p_v6', JSON.stringify(h));
             document.getElementById('p-total').value = "";
             renderPriceList();
         }
 
         function renderPriceList() {
-            let h = JSON.parse(localStorage.getItem('l_p_v5') || '[]');
+            let h = JSON.parse(localStorage.getItem('l_p_v6') || '[]');
             let l = document.getElementById('list-price');
             l.innerHTML = h.map(i => {
                 let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
@@ -569,7 +498,7 @@
                 
                 return `
                 <div class="item">
-                    <button class="btn-del" onclick="del('l_p_v5',${i.id},'p')">×</button>
+                    <button class="btn-del" onclick="del('l_p_v6',${i.id},'p')">×</button>
                     <div class="discount-box">
                         <label style="margin:0; cursor:pointer;"><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="togglePriceDiscount(${i.id}, this.checked)"> 开启折扣</label>
                         <span>折扣:</span>
@@ -588,32 +517,32 @@
                 try {
                     let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
                     let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
-                    JsBarcode(`#cp-${i.id}`, code, {format:"EAN13", width:2.5, height:70, displayValue:false});
+                    JsBarcode(`#cp-${i.id}`, code, {format:"EAN13", width:2.2, height:60, displayValue:false});
                 } catch(e) {}
             });
         }
 
         function togglePriceDiscount(id, isChecked) {
-            let h = JSON.parse(localStorage.getItem('l_p_v5') || '[]');
+            let h = JSON.parse(localStorage.getItem('l_p_v6') || '[]');
             let item = h.find(x => x.id === id);
-            if (item) { item.discountEnabled = isChecked; localStorage.setItem('l_p_v5', JSON.stringify(h)); renderPriceList(); }
+            if (item) { item.discountEnabled = isChecked; localStorage.setItem('l_p_v6', JSON.stringify(h)); renderPriceList(); }
         }
         function updatePriceDiscountVal(id, val) {
             let num = parseFloat(val);
             if (isNaN(num) || num <= 0 || num >= 10) return;
-            let h = JSON.parse(localStorage.getItem('l_p_v5') || '[]');
+            let h = JSON.parse(localStorage.getItem('l_p_v6') || '[]');
             let item = h.find(x => x.id === id);
-            if (item) { item.discountVal = num; localStorage.setItem('l_p_v5', JSON.stringify(h)); renderPriceList(); }
+            if (item) { item.discountVal = num; localStorage.setItem('l_p_v6', JSON.stringify(h)); renderPriceList(); }
         }
 
-        // --- 逻辑3: 会员码部分 ---
+        // --- 逻辑3: 会员码 ---
         function saveMemberCode() {
             let phoneText = document.getElementById('m-phone').value;
             let note = document.getElementById('m-note').value || "未备注";
             if (!phoneText.trim()) return alert("请输入至少一个会员号");
 
             let phoneArray = phoneText.split('\n').map(p => p.trim()).filter(p => p !== "");
-            let history = JSON.parse(localStorage.getItem('my_qr_list_auto_forest') || '[]');
+            let history = JSON.parse(localStorage.getItem('my_qr_list_snap') || '[]');
             let maxSerial = history.reduce((max, item) => Math.max(max, item.serial || 0), 0);
 
             let newItems = [];
@@ -623,7 +552,7 @@
             });
 
             history = newItems.concat(history);
-            localStorage.setItem('my_qr_list_auto_forest', JSON.stringify(history));
+            localStorage.setItem('my_qr_list_snap', JSON.stringify(history));
             document.getElementById('m-phone').value = "";
             document.getElementById('m-note').value = "";
             renderMemberList();
@@ -631,39 +560,70 @@
 
         function handleMemberCardClick(id, event) {
             if (event.target.classList.contains('btn-del')) return;
-            let history = JSON.parse(localStorage.getItem('my_qr_list_auto_forest') || '[]');
+            let history = JSON.parse(localStorage.getItem('my_qr_list_snap') || '[]');
             let item = history.find(x => x.id === id);
             if (item) {
                 item.scanCount = (item.scanCount || 0) + 1;
-                if (item.scanCount >= 5) {
-                    history = history.filter(x => x.id !== id);
-                }
-                localStorage.setItem('my_qr_list_auto_forest', JSON.stringify(history));
+                if (item.scanCount >= 5) history = history.filter(x => x.id !== id);
+                localStorage.setItem('my_qr_list_snap', JSON.stringify(history));
                 renderMemberList();
             }
         }
 
         function deleteMember(id) {
-            let history = JSON.parse(localStorage.getItem('my_qr_list_auto_forest') || '[]');
+            let history = JSON.parse(localStorage.getItem('my_qr_list_snap') || '[]');
             history = history.filter(item => item.id !== id);
-            localStorage.setItem('my_qr_list_auto_forest', JSON.stringify(history));
+            localStorage.setItem('my_qr_list_snap', JSON.stringify(history));
             renderMemberList();
         }
 
         function clearAllMembers() {
-            let history = JSON.parse(localStorage.getItem('my_qr_list_auto_forest') || '[]');
-            if (history.length === 0) return alert("当前没有保存任何会员数据！");
-            if (confirm("确定要清空所有的会员二维码记录吗？")) {
-                localStorage.removeItem('my_qr_list_auto_forest');
+            let history = JSON.parse(localStorage.getItem('my_qr_list_snap') || '[]');
+            if (history.length === 0) return alert("当前没有记录！");
+            if (confirm("确定要清空所有会员记录吗？")) {
+                localStorage.removeItem('my_qr_list_snap');
                 renderMemberList();
             }
         }
 
         function renderMemberList() {
-            let history = JSON.parse(localStorage.getItem('my_qr_list_auto_forest') || '[]');
+            let history = JSON.parse(localStorage.getItem('my_qr_list_snap') || '[]');
             let listDiv = document.getElementById('list-member');
             listDiv.innerHTML = ""; 
 
             history.forEach(item => {
                 let div = document.createElement('div');
-                div.className = 'item item-membe
+                div.className = 'item item-member';
+                let qrId = "qr-snap-" + item.id;
+                div.onclick = (e) => handleMemberCardClick(item.id, e);
+
+                div.innerHTML = `
+                    <button class="btn-del" onclick="deleteMember(${item.id})">×</button>
+                    <div class="item-info item-info-left">
+                        <div>
+                            <span class="serial-badge">NO.${item.serial}</span>
+                            <span class="item-note">${item.note}</span>
+                        </div>
+                        <div class="item-phone">${item.content}</div>
+                        <div class="scan-progress">🔄 已扫次数: ${item.scanCount || 0} / 5 （点击卡片计1次）</div>
+                    </div>
+                    <div class="qr-box" id="${qrId}"></div>
+                `;
+                listDiv.appendChild(div);
+
+                try {
+                    new QRCode(document.getElementById(qrId), {
+                        text: item.content, width: 130, height: 130, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
+                    });
+                } catch (e) {}
+            });
+        }
+
+        function del(key, id, type) {
+            let h = JSON.parse(localStorage.getItem(key) || '[]').filter(x => x.id !== id);
+            localStorage.setItem(key, JSON.stringify(h));
+            type === 'w' ? renderWeightList() : renderPriceList();
+        }
+    </script>
+</body>
+</html>
