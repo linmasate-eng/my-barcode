@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>7系条码与会员码综合助手（自由缩放版）</title>
+    <title>7系条码与会员码综合助手（平滑居中版）</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
     <!-- 引入条码与二维码生成库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
@@ -118,7 +118,7 @@
         .tab-active-price { background: #d4a373 !important; color: #1e3324 !important; }
         .tab-active-member { background: #3a5a40 !important; color: #e9edc9 !important; border: 1px solid #588157; }
 
-        /* 横向滑动容器：取消吸附，支持自由顺畅滑动 */
+        /* 横向滑动容器 */
         .page-slider {
             display: flex;
             width: 100vw;
@@ -130,7 +130,7 @@
         }
         .page-slider::-webkit-scrollbar { display: none; }
 
-        /* 每一页独立容器：取消强制 100vh 死高度，允许高度自适应和自由缩放 */
+        /* 每一页独立容器 */
         .page-pane {
             position: relative;
             width: 100vw;
@@ -166,7 +166,7 @@
             border: 1px solid rgba(255, 255, 255, 0.2); 
             border-radius: 10px; 
             box-sizing: border-box; 
-            font-size: 16px; /* 防止手机端聚焦时自动全局放大 */
+            font-size: 16px; 
             outline: none; 
             background: rgba(19, 34, 23, 0.8);
             color: #fff;
@@ -237,7 +237,7 @@
     <div id="fixed-bg"></div>
 
     <div class="top-bar">
-        <div class="version-tag">🌲 助手 v4.4 (自由缩放版)</div>
+        <div class="version-tag">🌲 助手 v4.5 (智能居中版)</div>
         <button class="bg-btn" onclick="document.getElementById('bg-file').click()">🖼️ 更换壁纸</button>
         <input type="file" id="bg-file" accept="image/*" style="display:none" onchange="changeBg(this)">
     </div>
@@ -249,7 +249,7 @@
         <button id="tab-member" class="tab-btn" onclick="scrollToPage(2)">会员码生成</button>
     </div>
 
-    <!-- 左右滑动翻页视口 (已解除强制吸附) -->
+    <!-- 左右滑动翻页视口 -->
     <div class="page-slider" id="pageSlider" onscroll="handleScrollSync()">
         
         <!-- 第 1 页：按重量生成 -->
@@ -321,8 +321,10 @@
     </div>
 
     <script>
+        let scrollTimeout = null;
+
         window.onload = function() {
-            let savedBg = localStorage.getItem('custom_bg_img_snap_v2');
+            let savedBg = localStorage.getItem('custom_bg_img_snap_v3');
             if (savedBg) {
                 document.getElementById('fixed-bg').style.backgroundImage = `url(${savedBg})`;
             }
@@ -349,7 +351,7 @@
                 reader.onload = function(e) {
                     let base64Img = e.target.result;
                     document.getElementById('fixed-bg').style.backgroundImage = `url(${base64Img})`;
-                    localStorage.setItem('custom_bg_img_snap_v2', base64Img);
+                    localStorage.setItem('custom_bg_img_snap_v3', base64Img);
                 };
                 reader.readAsDataURL(input.files[0]);
             }
@@ -363,6 +365,7 @@
             });
         }
 
+        // 联动标签与松手自动对齐居中
         function handleScrollSync() {
             const slider = document.getElementById('pageSlider');
             let index = Math.round(slider.scrollLeft / slider.clientWidth);
@@ -378,6 +381,18 @@
             if (index === 0) tw.className = 'tab-btn tab-active-weight';
             else if (index === 1) tp.className = 'tab-btn tab-active-price';
             else if (index === 2) tm.className = 'tab-btn tab-active-member';
+
+            // 当手指停止滑动后，自动轻柔吸附居中当前页（避免半截卡住，且不影响放大时的自由拖动）
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                let targetLeft = index * slider.clientWidth;
+                if (Math.abs(slider.scrollLeft - targetLeft) > 2) {
+                    slider.scrollTo({
+                        left: targetLeft,
+                        behavior: 'smooth'
+                    });
+                }
+            }, 150);
         }
 
         // --- 逻辑1: 重量条码 ---
