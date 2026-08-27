@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>7系条码与会员码综合助手（半透明森林版）</title>
+    <title>7系条码与会员码综合助手（左右滑动版）</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <!-- 引入条码与二维码生成库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
@@ -51,13 +51,15 @@
             align-items: center; 
             margin: 0; 
             color: var(--text-main);
+            overflow-x: hidden;
         }
         
         .top-bar {
             display: flex;
             gap: 10px;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             align-items: center;
+            z-index: 10;
         }
 
         .version-tag { 
@@ -88,18 +90,19 @@
         }
         .bg-btn:hover { background: rgba(34, 63, 42, 0.85); }
 
-        /* 三栏切换标签容器 */
+        /* 滑动指示器 / 标签栏 */
         .tab-container { 
             display: flex; 
             width: 100%; 
             max-width: 400px; 
-            margin-bottom: 20px; 
+            margin-bottom: 15px; 
             background: rgba(19, 34, 23, 0.75); 
             border-radius: 16px; 
             padding: 4px;
             border: 1px solid var(--card-border);
             backdrop-filter: blur(10px);
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 10;
         }
         .tab-btn { 
             flex: 1; 
@@ -118,6 +121,28 @@
         .tab-active-price { background: #d4a373 !important; color: #1e3324 !important; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         .tab-active-member { background: #3a5a40 !important; color: #e9edc9 !important; border: 1px solid #588157; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
 
+        /* 左右滑动视口容器 */
+        .slider-viewport {
+            width: 100%;
+            max-width: 400px;
+            overflow: hidden;
+            position: relative;
+        }
+        .slider-track {
+            display: flex;
+            width: 300%; /* 3个面板平铺 */
+            transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+            will-change: transform;
+        }
+        .slider-panel {
+            width: 33.3333%;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-sizing: border-box;
+        }
+
         /* 半透明毛玻璃卡片面板 */
         .card { 
             background: var(--card-bg); 
@@ -128,7 +153,6 @@
             -webkit-backdrop-filter: blur(12px);
             box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
             width: 100%; 
-            max-width: 400px; 
             box-sizing: border-box; 
         }
 
@@ -171,7 +195,7 @@
         }
         button:active { transform: scale(0.98); }
         
-        .history-list { width: 100%; max-width: 400px; margin-top: 25px; }
+        .history-list { width: 100%; margin-top: 25px; }
         
         /* 历史项通用面板 */
         .item { 
@@ -217,16 +241,11 @@
             box-shadow: 0 2px 6px rgba(0,0,0,0.2); z-index: 2;
         }
 
-        /* 扫描区/画布区域：纯白底板以防扫描枪/扫码墩识别失败 */
         canvas { 
             width: 100% !important; height: auto; margin-top: 10px; background: #ffffff; border-radius: 12px; padding: 8px 0; box-shadow: inset 0 2px 6px rgba(0,0,0,0.1); 
         }
         .qr-box { display: flex; justify-content: center; margin-top: 10px; }
         .qr-box img, .qr-box canvas { padding: 6px; background: #fff; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); display: block; }
-        
-        #section-weight { display: flex; flex-direction: column; align-items: center; width: 100%; }
-        #section-price { display: none; flex-direction: column; align-items: center; width: 100%; }
-        #section-member { display: none; flex-direction: column; align-items: center; width: 100%; }
     </style>
 </head>
 <body>
@@ -235,85 +254,97 @@
     <div id="fixed-bg"></div>
 
     <div class="top-bar">
-        <div class="version-tag">🌲 综合助手 v4.0</div>
+        <div class="version-tag">🌲 综合助手 v4.1 (滑动版)</div>
         <button class="bg-btn" onclick="document.getElementById('bg-file').click()">🖼️ 更换壁纸</button>
         <input type="file" id="bg-file" accept="image/*" style="display:none" onchange="changeBg(this)">
     </div>
 
-    <!-- 三栏切换按钮 -->
+    <!-- 顶部标签栏（也可点击直接跳页） -->
     <div class="tab-container">
-        <button id="tab-weight" class="tab-btn tab-active-weight" onclick="switchTab('weight')">按重量生成</button>
-        <button id="tab-price" class="tab-btn" onclick="switchTab('price')">价格反推</button>
-        <button id="tab-member" class="tab-btn" onclick="switchTab('member')">会员码生成</button>
+        <button id="tab-weight" class="tab-btn tab-active-weight" onclick="switchTab(0)">按重量生成</button>
+        <button id="tab-price" class="tab-btn" onclick="switchTab(1)">价格反推</button>
+        <button id="tab-member" class="tab-btn" onclick="switchTab(2)">会员码生成</button>
     </div>
 
-    <!-- 1. 按重量生成区块 -->
-    <div id="section-weight">
-        <div class="card">
-            <h2 style="margin:0 0 15px 0; color:#ccd5ae; font-size:18px; text-align: center; font-weight:700;">录入重量生成条码</h2>
-            <div class="input-group">
-                <label>货号</label>
-                <input type="tel" id="w-sku" placeholder="如: 16">
-            </div>
-            <div class="input-group">
-                <label>重量 (kg)</label>
-                <input type="number" id="w-weight" step="0.001" placeholder="如: 0.525">
-            </div>
-            <div class="input-group">
-                <label>备注</label>
-                <input type="text" id="w-note" placeholder="如: 鸡蛋">
-            </div>
-            <button class="btn-weight" onclick="saveWeightCode()">生成并保存条码</button>
-        </div>
-        <div id="list-weight" class="history-list"></div>
-    </div>
-
-    <!-- 2. 价格反推区块 -->
-    <div id="section-price">
-        <div class="card">
-            <h2 style="margin:0 0 15px 0; color:#d4a373; font-size:18px; text-align: center; font-weight:700;">输入价格反推重量</h2>
-            <div class="input-group">
-                <label>货号 (自动填单价)</label>
-                <input type="tel" id="p-sku" placeholder="输入货号">
-            </div>
-            <div style="display:flex; gap:10px;">
-                <div class="input-group" style="flex:1;">
-                    <label>单价 (元/kg)</label>
-                    <input type="number" id="p-unit" step="0.01" placeholder="单价">
+    <!-- 左右滑动视口 -->
+    <div class="slider-viewport" id="slider-viewport">
+        <div class="slider-track" id="slider-track">
+            
+            <!-- 面板 1：按重量生成 -->
+            <div class="slider-panel">
+                <div class="card">
+                    <h2 style="margin:0 0 15px 0; color:#ccd5ae; font-size:18px; text-align: center; font-weight:700;">录入重量生成条码</h2>
+                    <div class="input-group">
+                        <label>货号</label>
+                        <input type="tel" id="w-sku" placeholder="如: 16">
+                    </div>
+                    <div class="input-group">
+                        <label>重量 (kg)</label>
+                        <input type="number" id="w-weight" step="0.001" placeholder="如: 0.525">
+                    </div>
+                    <div class="input-group">
+                        <label>备注</label>
+                        <input type="text" id="w-note" placeholder="如: 鸡蛋">
+                    </div>
+                    <button class="btn-weight" onclick="saveWeightCode()">生成并保存条码</button>
                 </div>
-                <div class="input-group" style="flex:1;">
-                    <label>总价 (元)</label>
-                    <input type="number" id="p-total" step="0.01" placeholder="总额">
-                </div>
+                <div id="list-weight" class="history-list"></div>
             </div>
-            <div class="input-group">
-                <label>备注</label>
-                <input type="text" id="p-note" placeholder="备注">
-            </div>
-            <button class="btn-price" onclick="savePriceCode()">换算并生成条码</button>
-        </div>
-        <div id="list-price" class="history-list"></div>
-    </div>
 
-    <!-- 3. 会员码生成区块（带自动消减/计数功能） -->
-    <div id="section-member">
-        <div class="card">
-            <h2 style="margin:0 0 15px 0; color:#e9edc9; font-size:18px; text-align: center; font-weight:700;">会员二维码 (满5次自动消失)</h2>
-            <div class="input-group">
-                <label>会员号 / 手机号 (支持批量换行)</label>
-                <textarea id="m-phone" placeholder="输入会员手机号，多个号码请换行&#10;13800000001&#10;13800000002"></textarea>
+            <!-- 面板 2：价格反推 -->
+            <div class="slider-panel">
+                <div class="card">
+                    <h2 style="margin:0 0 15px 0; color:#d4a373; font-size:18px; text-align: center; font-weight:700;">输入价格反推重量</h2>
+                    <div class="input-group">
+                        <label>货号 (自动填单价)</label>
+                        <input type="tel" id="p-sku" placeholder="输入货号">
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <div class="input-group" style="flex:1;">
+                            <label>单价 (元/kg)</label>
+                            <input type="number" id="p-unit" step="0.01" placeholder="单价">
+                        </div>
+                        <div class="input-group" style="flex:1;">
+                            <label>总价 (元)</label>
+                            <input type="number" id="p-total" step="0.01" placeholder="总额">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>备注</label>
+                        <input type="text" id="p-note" placeholder="备注">
+                    </div>
+                    <button class="btn-price" onclick="savePriceCode()">换算并生成条码</button>
+                </div>
+                <div id="list-price" class="history-list"></div>
             </div>
-            <div class="input-group">
-                <label>统一备注 (选填)</label>
-                <input type="text" id="m-note" placeholder="如：VIP批次">
+
+            <!-- 面板 3：会员码生成 -->
+            <div class="slider-panel">
+                <div class="card">
+                    <h2 style="margin:0 0 15px 0; color:#e9edc9; font-size:18px; text-align: center; font-weight:700;">会员二维码 (满5次自动消失)</h2>
+                    <div class="input-group">
+                        <label>会员号 / 手机号 (支持批量换行)</label>
+                        <textarea id="m-phone" placeholder="输入会员手机号，多个号码请换行&#10;13800000001&#10;13800000002"></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>统一备注 (选填)</label>
+                        <input type="text" id="m-note" placeholder="如：VIP批次">
+                    </div>
+                    <button class="btn-member" onclick="saveMemberCode()">批量生成会员码</button>
+                    <button class="btn-clear" onclick="clearAllMembers()">清空所有会员记录</button>
+                </div>
+                <div id="list-member" class="history-list"></div>
             </div>
-            <button class="btn-member" onclick="saveMemberCode()">批量生成会员码</button>
-            <button class="btn-clear" onclick="clearAllMembers()">清空所有会员记录</button>
+
         </div>
-        <div id="list-member" class="history-list"></div>
     </div>
 
     <script>
+        let currentIndex = 0;
+        let startX = 0;
+        let startY = 0;
+        let isDragging = false;
+
         window.onload = function() {
             let savedBg = localStorage.getItem('custom_bg_img_forest_all');
             if (savedBg) {
@@ -334,6 +365,9 @@
                     setTimeout(() => unitInput.classList.remove('highlight-fill'), 600);
                 }
             });
+
+            // 初始化触控左右滑动监听
+            initTouchSwipe();
         };
 
         function changeBg(input) {
@@ -348,28 +382,67 @@
             }
         }
 
-        // 切换面板标签
-        function switchTab(mode) {
-            const sw = document.getElementById('section-weight');
-            const sp = document.getElementById('section-price');
-            const sm = document.getElementById('section-member');
+        // 切换面板标签与滚动
+        function switchTab(index) {
+            currentIndex = index;
+            const track = document.getElementById('slider-track');
+            track.style.transform = `translateX(-${currentIndex * 33.3333}%)`;
+
             const tw = document.getElementById('tab-weight');
             const tp = document.getElementById('tab-price');
             const tm = document.getElementById('tab-member');
 
-            sw.style.display = 'none'; sp.style.display = 'none'; sm.style.display = 'none';
-            tw.className = 'tab-btn'; tp.className = 'tab-btn'; tm.className = 'tab-btn';
+            tw.className = 'tab-btn'; 
+            tp.className = 'tab-btn'; 
+            tm.className = 'tab-btn';
 
-            if (mode === 'weight') {
-                sw.style.display = 'flex';
+            if (index === 0) {
                 tw.className = 'tab-btn tab-active-weight';
-            } else if (mode === 'price') {
-                sp.style.display = 'flex';
+            } else if (index === 1) {
                 tp.className = 'tab-btn tab-active-price';
-            } else if (mode === 'member') {
-                sm.style.display = 'flex';
+            } else if (index === 2) {
                 tm.className = 'tab-btn tab-active-member';
             }
+        }
+
+        // 绑定触摸滑动事件 (支持流畅的手势左右滑动切换)
+        function initTouchSwipe() {
+            const viewport = document.getElementById('slider-viewport');
+
+            viewport.addEventListener('touchstart', (e) => {
+                // 如果触摸点在输入框、文本域内，不拦截横向滑动，防止无法光标选字
+                if(['INPUT', 'TEXTAREA', 'BUTTON'].includes(e.target.tagName)) return;
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                isDragging = true;
+            }, {passive: true});
+
+            viewport.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                let currentX = e.touches[0].clientX;
+                let currentY = e.touches[0].clientY;
+                let diffX = currentX - startX;
+                let diffY = currentY - startY;
+
+                // 如果用户上下滑动幅度更大，则判定为上下滚动页面，取消左右滑切换
+                if (Math.abs(diffY) > Math.abs(diffX)) {
+                    isDragging = false;
+                }
+            }, {passive: true});
+
+            viewport.addEventListener('touchend', (e) => {
+                if (!isDragging) return;
+                isDragging = false;
+                let endX = e.changedTouches[0].clientX;
+                let diffX = endX - startX;
+
+                // 滑动距离超过 50px 触发切换
+                if (diffX < -50 && currentIndex < 2) {
+                    switchTab(currentIndex + 1);
+                } else if (diffX > 50 && currentIndex > 0) {
+                    switchTab(currentIndex - 1);
+                }
+            });
         }
 
         // --- 逻辑1: 重量条码部分 ---
@@ -597,44 +670,4 @@
 
         function renderMemberList() {
             let history = JSON.parse(localStorage.getItem('my_qr_list_auto_forest') || '[]');
-            let listDiv = document.getElementById('list-member');
-            listDiv.innerHTML = ""; 
-
-            history.forEach(item => {
-                let div = document.createElement('div');
-                div.className = 'item item-member';
-                let qrId = "qr-" + item.id;
-                let currentCount = item.scanCount || 0;
-                
-                div.onclick = (e) => handleMemberCardClick(item.id, e);
-
-                div.innerHTML = `
-                    <button class="btn-del" onclick="deleteMember(${item.id})">×</button>
-                    <div class="item-info item-info-left">
-                        <div>
-                            <span class="serial-badge">NO.${item.serial}</span>
-                            <span class="item-note">${item.note}</span>
-                        </div>
-                        <div class="item-phone">${item.content}</div>
-                        <div class="scan-progress">🔄 已扫次数: ${currentCount} / 5 （点击卡片算作扫码一次）</div>
-                    </div>
-                    <div class="qr-box" id="${qrId}"></div>
-                `;
-                listDiv.appendChild(div);
-
-                try {
-                    new QRCode(document.getElementById(qrId), {
-                        text: item.content, width: 140, height: 140, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
-                    });
-                } catch (e) {}
-            });
-        }
-
-        function del(key, id, type) {
-            let h = JSON.parse(localStorage.getItem(key) || '[]').filter(x => x.id !== id);
-            localStorage.setItem(key, JSON.stringify(h));
-            type === 'w' ? renderWeightList() : renderPriceList();
-        }
-    </script>
-</body>
-</html>
+            let listDiv = document.g
