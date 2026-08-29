@@ -224,7 +224,7 @@
         .qr-box { display: flex; justify-content: center; margin-top: 10px; }
         .qr-box img, .qr-box canvas { padding: 6px; background: #fff; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); display: block; }
         
-        #section-weight { display: flex; flex-direction: column; align-items: center; width: 100%; }
+        #section-weight { display: flex; flex-direction: /column; align-items: center; width: 100%; }
         #section-price { display: none; flex-direction: column; align-items: center; width: 100%; }
         #section-member { display: none; flex-direction: column; align-items: center; width: 100%; }
     </style>
@@ -235,7 +235,7 @@
     <div id="fixed-bg"></div>
 
     <div class="top-bar">
-        <div class="version-tag">🌲 综合助手 v4.0</div>
+        <div class="version-tag">🌲 综合助手 v4.1</div>
         <button class="bg-btn" onclick="document.getElementById('bg-file').click()">🖼️ 更换壁纸</button>
         <input type="file" id="bg-file" accept="image/*" style="display:none" onchange="changeBg(this)">
     </div>
@@ -268,10 +268,10 @@
         <div id="list-weight" class="history-list"></div>
     </div>
 
-    <!-- 2. 价格反推区块 -->
+    <!-- 2. 价格反推区块（已增加公斤输入/联动反推换算） -->
     <div id="section-price">
         <div class="card">
-            <h2 style="margin:0 0 15px 0; color:#d4a373; font-size:18px; text-align: center; font-weight:700;">输入价格反推重量</h2>
+            <h2 style="margin:0 0 15px 0; color:#d4a373; font-size:18px; text-align: center; font-weight:700;">价格与公斤换算反推</h2>
             <div class="input-group">
                 <label>货号 (自动填单价)</label>
                 <input type="tel" id="p-sku" placeholder="输入货号">
@@ -282,9 +282,13 @@
                     <input type="number" id="p-unit" step="0.01" placeholder="单价">
                 </div>
                 <div class="input-group" style="flex:1;">
-                    <label>总价 (元)</label>
-                    <input type="number" id="p-total" step="0.01" placeholder="总额">
+                    <label>输入公斤 (kg)</label>
+                    <input type="number" id="p-input-kg" step="0.001" placeholder="输入kg算总价" oninput="calcTotalFromKg()">
                 </div>
+            </div>
+            <div class="input-group">
+                <label>总价 (元) <span style="font-size:11px; color:#b7b7a4; font-weight:normal;">(或直接填总价反推公斤)</span></label>
+                <input type="number" id="p-total" step="0.01" placeholder="总额" oninput="calcKgFromTotal()">
             </div>
             <div class="input-group">
                 <label>备注</label>
@@ -332,6 +336,8 @@
                     unitInput.value = map[sku];
                     unitInput.classList.add('highlight-fill');
                     setTimeout(() => unitInput.classList.remove('highlight-fill'), 600);
+                    // 重新计算一次，防止单价带入时已有公斤或总价
+                    calcTotalFromKg();
                 }
             });
         };
@@ -470,13 +476,31 @@
             }
         }
 
-        // --- 逻辑2: 价格反推部分 ---
+        // --- 逻辑2: 价格与公斤换算反推部分 ---
+        function calcTotalFromKg() {
+            let unit = parseFloat(document.getElementById('p-unit').value);
+            let kg = parseFloat(document.getElementById('p-input-kg').value);
+            if (!isNaN(unit) && !isNaN(kg)) {
+                let total = unit * kg;
+                document.getElementById('p-total').value = total.toFixed(2);
+            }
+        }
+
+        function calcKgFromTotal() {
+            let unit = parseFloat(document.getElementById('p-unit').value);
+            let total = parseFloat(document.getElementById('p-total').value);
+            if (!isNaN(unit) && unit > 0 && !isNaN(total)) {
+                let kg = total / unit;
+                document.getElementById('p-input-kg').value = kg.toFixed(3);
+            }
+        }
+
         function savePriceCode() {
             let s = document.getElementById('p-sku').value;
             let u = parseFloat(document.getElementById('p-unit').value);
             let t = parseFloat(document.getElementById('p-total').value);
             let n = document.getElementById('p-note').value || "未命名";
-            if (!s || isNaN(u) || isNaN(t)) return alert("请完整输入信息");
+            if (!s || isNaN(u) || isNaN(t)) return alert("请完整输入货号、单价和总价（或通过公斤换算）");
             
             let baseGrams = Math.round((t / u) * 1000);
             if (baseGrams > 99999) return alert("重量超出限制");
@@ -492,6 +516,7 @@
             });
             localStorage.setItem('l_p_v5', JSON.stringify(h));
             document.getElementById('p-total').value = "";
+            document.getElementById('p-input-kg').value = "";
             renderPriceList();
         }
 
@@ -513,7 +538,7 @@
                     </div>
                     <div class="item-info">
                         <div class="item-note">${i.note}</div>
-                        <div class="item-sub">目标总价: ${i.totalPrice}元 ${i.discountEnabled ? `<br>✨ 折后结算重: <b>${displayWeightKg}kg</b>` : `(约 ${(i.baseGrams/1000).toFixed(3)}kg)`}</div>
+                        <div class="item-sub">目标总价: ${i.totalPrice}元 (单价: ${i.unitPrice}元/kg) ${i.discountEnabled ? `<br>✨ 折后结算重: <b>${displayWeightKg}kg</b>` : `(约 ${(i.baseGrams/1000).toFixed(3)}kg)`}</div>
                         <span class="item-code">${code}</span>
                     </div>
                     <canvas id="cp-${i.id}"></canvas>
@@ -622,19 +647,4 @@
                 `;
                 listDiv.appendChild(div);
 
-                try {
-                    new QRCode(document.getElementById(qrId), {
-                        text: item.content, width: 140, height: 140, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
-                    });
-                } catch (e) {}
-            });
-        }
-
-        function del(key, id, type) {
-            let h = JSON.parse(localStorage.getItem(key) || '[]').filter(x => x.id !== id);
-            localStorage.setItem(key, JSON.stringify(h));
-            type === 'w' ? renderWeightList() : renderPriceList();
-        }
-    </script>
-</body>
-</html>
+       
