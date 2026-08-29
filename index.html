@@ -652,3 +652,659 @@
     </script>
 </body>
 </html>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>7系条码综合助手（半透明森林版）</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- 引入条码生成库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+    <style>
+        :root { 
+            --primary: #4e8752;     
+            --secondary: #d4a373;   
+            --card-bg: rgba(30, 51, 36, 0.75);     /* 半透明深绿面板 */
+            --card-border: rgba(255, 255, 255, 0.15); /* 半透明精致边框 */
+            --text-main: #e9edc9;   
+            --text-sub: #b7b7a4;    
+        }
+
+        #fixed-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #0f1d13 0%, #1b3322 40%, #284b30 80%, #132217 100%);
+            background-size: cover;
+            background-position: center;
+            z-index: -999;
+            pointer-events: none;
+        }
+
+        /* 森林树叶纹理叠加层 */
+        #fixed-bg::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0.15;
+            background-image: radial-gradient(#a3b18a 1px, transparent 1px), radial-gradient(#588157 1px, #0f1d13 1px);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+            pointer-events: none;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            min-height: 100vh;
+            padding: 20px 15px 150px 15px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            margin: 0; 
+            color: var(--text-main);
+        }
+        
+        .top-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .version-tag { 
+            background: rgba(23, 43, 30, 0.7); 
+            color: #d8f3dc; 
+            padding: 6px 14px; 
+            border-radius: 20px; 
+            font-size: 12px; 
+            font-weight: 500; 
+            letter-spacing: 1px;
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .bg-btn {
+            background: rgba(23, 43, 30, 0.7);
+            color: #d8f3dc;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(8px);
+            cursor: pointer;
+            transition: background 0.2s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        .bg-btn:hover { background: rgba(34, 63, 42, 0.85); }
+
+        /* 两栏切换标签容器 */
+        .tab-container { 
+            display: flex; 
+            width: 100%; 
+            max-width: 400px; 
+            margin-bottom: 20px; 
+            background: rgba(19, 34, 23, 0.75); 
+            border-radius: 16px; 
+            padding: 4px;
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .tab-btn { 
+            flex: 1; 
+            padding: 10px 4px; 
+            border: none; 
+            border-radius: 12px; 
+            font-size: 13px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            color: var(--text-sub); 
+            background: transparent; 
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        .tab-active-weight { background: #4e8752 !important; color: #fff !important; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .tab-active-price { background: #d4a373 !important; color: #1e3324 !important; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+
+        /* 半透明毛玻璃卡片面板 */
+        .card { 
+            background: var(--card-bg); 
+            padding: 24px; 
+            border-radius: 24px; 
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+            width: 100%; 
+            max-width: 400px; 
+            box-sizing: border-box; 
+        }
+
+        .input-group { margin-bottom: 14px; text-align: left; }
+        label { font-size: 13px; font-weight: 600; color: #b7b7a4; display: block; margin-bottom: 5px; }
+        
+        input { 
+            width: 100%; 
+            padding: 12px; 
+            border: 1px solid rgba(255, 255, 255, 0.15); 
+            border-radius: 12px; 
+            box-sizing: border-box; 
+            font-size: 16px; 
+            outline: none; 
+            background: rgba(19, 34, 23, 0.6);
+            color: #fff;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+        input:focus { border-color: #588157; box-shadow: 0 0 0 3px rgba(88, 129, 87, 0.25); background: rgba(24, 43, 30, 0.8); }
+        
+        .highlight-fill { background-color: rgba(56, 44, 31, 0.8) !important; border-color: #d4a373 !important; }
+
+        button.btn-weight { 
+            width: 100%; padding: 14px; background: linear-gradient(135deg, #4e8752, #386641); 
+            color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 5px; box-shadow: 0 4px 15px rgba(56, 102, 65, 0.4);
+        }
+        button.btn-price { 
+            width: 100%; padding: 14px; background: linear-gradient(135deg, #d4a373, #bc6c25); 
+            color: #1e3324; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 5px; box-shadow: 0 4px 15px rgba(188, 108, 37, 0.4);
+        }
+        button:active { transform: scale(0.98); }
+        
+        .history-list { width: 100%; max-width: 400px; margin-top: 25px; }
+        
+        /* 历史项通用面板 */
+        .item { 
+            background: var(--card-bg); 
+            padding: 24px; 
+            border-radius: 24px; 
+            margin-bottom: 25px; 
+            position: relative; 
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+            text-align: center; 
+        }
+        
+        .item-info { text-align: center; border-bottom: 1px dashed rgba(255,255,255,0.15); margin-bottom: 15px; padding-bottom: 12px; }
+        
+        .item-note { font-weight: 700; color: #e9edc9; font-size: 18px; }
+        .item-sub { font-size: 14px; color: #b7b7a4; margin-top: 6px; font-weight: 500; }
+        .item-code { font-family: monospace; color: #ccd5ae; font-size: 19px; font-weight: 700; margin-top: 10px; display: block; letter-spacing: 1.5px; } 
+
+        .discount-box { 
+            background: rgba(19, 34, 23, 0.6); padding: 10px 12px; border-radius: 12px; 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            margin-bottom: 14px;
+            font-size: 13px;
+            color: #b7b7a4;
+            text-align: left;
+        }
+        .discount-row-top {
+            display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px;
+        }
+        .discount-row-top label { margin: 0; cursor: pointer; display: flex; align-items: center; gap: 6px; color: #e9edc9; font-weight: 600; }
+        .discount-row-top input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: #d4a373; }
+        
+        .discount-inputs { display: flex; align-items: center; gap: 4px; }
+        .discount-box input[type="number"] { width: 68px; padding: 4px; text-align: center; font-size: 13px; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; background: rgba(30, 51, 36, 0.8); color: #fff; }
+
+        /* 折后对比信息呈现 */
+        .discount-compare-bar {
+            font-size: 12px;
+            color: #d8f3dc;
+            background: rgba(88, 129, 87, 0.25);
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px dashed rgba(163, 177, 138, 0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .discount-compare-bar .compare-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .discount-compare-bar b { color: #f4a261; }
+
+        .btn-del { 
+            position: absolute; right: 14px; top: 14px; color: #ffcccc; border: none; 
+            background: rgba(180, 50, 50, 0.6); border-radius: 50%; width: 30px; height: 30px; 
+            font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; 
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2); z-index: 2;
+        }
+
+        /* 扫描区/画布区域 */
+        canvas { 
+            width: 100% !important; height: auto; margin-top: 10px; background: #ffffff; border-radius: 12px; padding: 8px 0; box-shadow: inset 0 2px 6px rgba(0,0,0,0.1); 
+        }
+        
+        #section-weight { display: flex; flex-direction: column; align-items: center; width: 100%; }
+        #section-price { display: none; flex-direction: column; align-items: center; width: 100%; }
+    </style>
+</head>
+<body>
+
+    <div id="fixed-bg"></div>
+
+    <div class="top-bar">
+        <div class="version-tag">🌲 综合助手 v5.0</div>
+        <button class="bg-btn" onclick="document.getElementById('bg-file').click()">🖼️ 更换壁纸</button>
+        <input type="file" id="bg-file" accept="image/*" style="display:none" onchange="changeBg(this)">
+    </div>
+
+    <!-- 两栏切换按钮 -->
+    <div class="tab-container">
+        <button id="tab-weight" class="tab-btn tab-active-weight" onclick="switchTab('weight')">按重量生成</button>
+        <button id="tab-price" class="tab-btn" onclick="switchTab('price')">价格反推</button>
+    </div>
+
+    <!-- 1. 按重量生成区块 -->
+    <div id="section-weight">
+        <div class="card">
+            <h2 style="margin:0 0 15px 0; color:#ccd5ae; font-size:18px; text-align: center; font-weight:700;">录入重量生成条码</h2>
+            <div class="input-group">
+                <label>货号</label>
+                <input type="tel" id="w-sku" placeholder="如: 16">
+            </div>
+            <div class="input-group">
+                <label>重量 (kg)</label>
+                <input type="number" id="w-weight" step="0.001" placeholder="如: 0.525">
+            </div>
+            <div class="input-group">
+                <label>备注</label>
+                <input type="text" id="w-note" placeholder="如: 鸡蛋">
+            </div>
+            <button class="btn-weight" onclick="saveWeightCode()">生成并保存条码</button>
+        </div>
+        <div id="list-weight" class="history-list"></div>
+    </div>
+
+    <!-- 2. 价格反推区块 -->
+    <div id="section-price">
+        <div class="card">
+            <h2 style="margin:0 0 15px 0; color:#d4a373; font-size:18px; text-align: center; font-weight:700;">价格与公斤换算反推</h2>
+            <div class="input-group">
+                <label>货号 (自动填单价)</label>
+                <input type="tel" id="p-sku" placeholder="输入货号">
+            </div>
+            <div class="input-group">
+                <label>原单价 (元/kg)</label>
+                <input type="number" id="p-unit" step="0.01" placeholder="单价">
+            </div>
+            <div style="display:flex; gap:10px;">
+                <div class="input-group" style="flex:1;">
+                    <label>输入公斤 (kg)</label>
+                    <input type="number" id="p-input-kg" step="0.001" placeholder="输入kg算总价" oninput="calcTotalFromKg()">
+                </div>
+                <div class="input-group" style="flex:1;">
+                    <label>原总价 (元)</label>
+                    <input type="number" id="p-total" step="0.01" placeholder="总额" oninput="calcKgFromTotal()">
+                </div>
+            </div>
+            <div class="input-group">
+                <label>备注</label>
+                <input type="text" id="p-note" placeholder="备注">
+            </div>
+            <button class="btn-price" onclick="savePriceCode()">换算并生成条码</button>
+        </div>
+        <div id="list-price" class="history-list"></div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            let savedBg = localStorage.getItem('custom_bg_img_forest_all');
+            if (savedBg) {
+                document.getElementById('fixed-bg').style.backgroundImage = `url(${savedBg})`;
+            }
+
+            renderWeightList();
+            renderPriceList();
+            
+            document.getElementById('p-sku').addEventListener('input', function() {
+                let sku = this.value.padStart(6, '0');
+                let map = JSON.parse(localStorage.getItem('sku_price_map_v5') || '{}');
+                let unitInput = document.getElementById('p-unit');
+                if (map[sku]) {
+                    unitInput.value = map[sku];
+                    unitInput.classList.add('highlight-fill');
+                    setTimeout(() => unitInput.classList.remove('highlight-fill'), 600);
+                    calcTotalFromKg();
+                }
+            });
+        };
+
+        function changeBg(input) {
+            if (input.files && input.files[0]) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    let base64Img = e.target.result;
+                    document.getElementById('fixed-bg').style.backgroundImage = `url(${base64Img})`;
+                    localStorage.setItem('custom_bg_img_forest_all', base64Img);
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function switchTab(mode) {
+            const sw = document.getElementById('section-weight');
+            const sp = document.getElementById('section-price');
+            const tw = document.getElementById('tab-weight');
+            const tp = document.getElementById('tab-price');
+
+            sw.style.display = 'none'; sp.style.display = 'none';
+            tw.className = 'tab-btn'; tp.className = 'tab-btn';
+
+            if (mode === 'weight') {
+                sw.style.display = 'flex';
+                tw.className = 'tab-btn tab-active-weight';
+            } else if (mode === 'price') {
+                sp.style.display = 'flex';
+                tp.className = 'tab-btn tab-active-price';
+            }
+        }
+
+        function calculateEAN13(first12) {
+            let sO = 0, sE = 0;
+            for (let i = 0; i < 12; i++) {
+                let n = parseInt(first12[i]);
+                if ((i + 1) % 2 === 0) sE += n; else sO += n;
+            }
+            let ck = (10 - ((sO + sE * 3) % 10)) % 10;
+            return first12 + ck;
+        }
+
+        function getComputedGrams(item) {
+            if (item.discountEnabled && item.discountVal > 0 && item.discountVal <= 10) {
+                return Math.round((item.baseGrams * 10) / item.discountVal);
+            }
+            return item.baseGrams;
+        }
+
+        function saveWeightCode() {
+            let s = document.getElementById('w-sku').value;
+            let w = parseFloat(document.getElementById('w-weight').value);
+            let n = document.getElementById('w-note').value || "未命名";
+            if (!s || isNaN(w)) return alert("请输入货号和重量");
+            
+            let baseGrams = Math.round(w * 1000);
+
+            let h = JSON.parse(localStorage.getItem('l_w_v5') || '[]');
+            h.unshift({
+                id: Date.now(),
+                sku: s.padStart(6, '0'),
+                baseGrams: baseGrams,
+                note: n,
+                discountEnabled: true,
+                discountVal: 5.000
+            });
+            localStorage.setItem('l_w_v5', JSON.stringify(h));
+            document.getElementById('w-weight').value = "";
+            renderWeightList();
+        }
+
+        function renderWeightList() {
+            let h = JSON.parse(localStorage.getItem('l_w_v5') || '[]');
+            let l = document.getElementById('list-weight');
+            l.innerHTML = h.map(i => {
+                let curGrams = getComputedGrams(i);
+                let displayWeightKg = (curGrams / 1000).toFixed(3);
+                let originalKg = (i.baseGrams / 1000).toFixed(3);
+                let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
+                let currentDiscValStr = Number(i.discountVal).toFixed(3);
+                
+                let compareBarHtml = '';
+                if (i.discountEnabled) {
+                    compareBarHtml = `
+                    <div class="discount-compare-bar">
+                        <div class="compare-line">
+                            <span>基础实重: <b>${originalKg} kg</b></span>
+                            <span>➔</span>
+                            <span>折后条码重: <input type="number" id="w-disc-kg-${i.id}" step="0.001" value="${displayWeightKg}" style="width:75px; display:inline-block; padding:2px 4px; font-size:13px; text-align:center; background:rgba(30,51,36,0.9); color:#f4a261; border:1px solid #d4a373; border-radius:6px;" oninput="onWeightDiscKgInput(${i.id}, this.value)"> kg</span>
+                        </div>
+                    </div>`;
+                }
+
+                return `
+                <div class="item">
+                    <button class="btn-del" onclick="del('l_w_v5',${i.id},'w')">×</button>
+                    <div class="discount-box">
+                        <div class="discount-row-top">
+                            <label><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="toggleDiscount('l_w_v5', ${i.id}, this.checked)"> 开启折扣</label>
+                            <div class="discount-inputs">
+                                <span>折扣:</span>
+                                <input type="number" id="w-disc-val-${i.id}" step="0.001" min="0.1" max="9.999" value="${currentDiscValStr}" oninput="onWeightDiscValInput(${i.id}, this.value)">折
+                            </div>
+                        </div>
+                        ${compareBarHtml}
+                    </div>
+                    <div class="item-info">
+                        <div class="item-note">${i.note}</div>
+                        <div class="item-sub">原始基准重量: ${originalKg} kg</div>
+                        <span class="item-code" id="w-code-text-${i.id}">${code}</span>
+                    </div>
+                    <canvas id="cw-${i.id}"></canvas>
+                </div>`;
+            }).join('');
+            
+            h.forEach(i => {
+                redrawWeightBarcode(i);
+            });
+        }
+
+        function onWeightDiscKgInput(id, newDiscKgStr) {
+            let newDiscKg = parseFloat(newDiscKgStr);
+            if (isNaN(newDiscKg) || newDiscKg <= 0) return;
+            let h = JSON.parse(localStorage.getItem('l_w_v5') || '[]');
+            let item = h.find(x => x.id === id);
+            if (item) {
+                let baseKg = item.baseGrams / 1000;
+                let newDiscount = (baseKg * 10) / newDiscKg;
+                if (newDiscount >= 0.1 && newDiscount <= 9.999) {
+                    item.discountVal = Math.round(newDiscount * 1000) / 1000;
+                    localStorage.setItem('l_w_v5', JSON.stringify(h));
+                    
+                    let discValInput = document.getElementById(`w-disc-val-${id}`);
+                    if (discValInput) discValInput.value = Number(item.discountVal).toFixed(3);
+                    redrawWeightBarcode(item);
+                }
+            }
+        }
+
+        function onWeightDiscValInput(id, val) {
+            let num = parseFloat(val);
+            if (isNaN(num) || num <= 0 || num >= 10) return;
+            let h = JSON.parse(localStorage.getItem('l_w_v5') || '[]');
+            let item = h.find(x => x.id === id);
+            if (item) {
+                item.discountVal = num;
+                localStorage.setItem('l_w_v5', JSON.stringify(h));
+                
+                let curGrams = getComputedGrams(item);
+                let displayWeightKg = (curGrams / 1000).toFixed(3);
+                let discKgInput = document.getElementById(`w-disc-kg-${id}`);
+                if (discKgInput) discKgInput.value = displayWeightKg;
+                redrawWeightBarcode(item);
+            }
+        }
+
+        function redrawWeightBarcode(item) {
+            try {
+                let curGrams = getComputedGrams(item);
+                let code = calculateEAN13("7" + item.sku + curGrams.toString().padStart(5, '0'));
+                let codeTextEl = document.getElementById(`w-code-text-${item.id}`);
+                if (codeTextEl) codeTextEl.innerText = code;
+                JsBarcode(`#cw-${item.id}`, code, {format:"EAN13", width:2.5, height:70, displayValue:false});
+            } catch(e) {}
+        }
+
+        // --- 逻辑2: 价格换算部分 ---
+        function calcTotalFromKg() {
+            let unit = parseFloat(document.getElementById('p-unit').value);
+            let kg = parseFloat(document.getElementById('p-input-kg').value);
+            if (!isNaN(unit) && !isNaN(kg)) {
+                let total = unit * kg;
+                document.getElementById('p-total').value = total.toFixed(2);
+            }
+        }
+
+        function calcKgFromTotal() {
+            let unit = parseFloat(document.getElementById('p-unit').value);
+            let total = parseFloat(document.getElementById('p-total').value);
+            if (!isNaN(unit) && unit > 0 && !isNaN(total)) {
+                let kg = total / unit;
+                document.getElementById('p-input-kg').value = kg.toFixed(3);
+            }
+        }
+
+        function savePriceCode() {
+            let s = document.getElementById('p-sku').value;
+            let u = parseFloat(document.getElementById('p-unit').value);
+            let t = parseFloat(document.getElementById('p-total').value);
+            let n = document.getElementById('p-note').value || "未命名";
+            if (!s || isNaN(u) || isNaN(t)) return alert("请完整输入货号、单价和总价");
+            
+            let baseGrams = Math.round((t / u) * 1000);
+
+            if (baseGrams > 99999) return alert("重量超出限制");
+            
+            let sku = s.padStart(6, '0');
+            let map = JSON.parse(localStorage.getItem('sku_price_map_v5') || '{}');
+            map[sku] = u;
+            localStorage.setItem('sku_price_map_v5', JSON.stringify(map));
+
+            let h = JSON.parse(localStorage.getItem('l_p_v5') || '[]');
+            h.unshift({
+                id: Date.now(), sku: sku, baseGrams: baseGrams, totalPrice: t, unitPrice: u, note: n, discountEnabled: true, discountVal: 5.000
+            });
+            localStorage.setItem('l_p_v5', JSON.stringify(h));
+            document.getElementById('p-total').value = "";
+            document.getElementById('p-input-kg').value = "";
+            renderPriceList();
+        }
+
+        function renderPriceList() {
+            let h = JSON.parse(localStorage.getItem('l_p_v5') || '[]');
+            let l = document.getElementById('list-price');
+            l.innerHTML = h.map(i => {
+                let curGrams = getComputedGrams(i);
+                let displayWeightKg = (curGrams / 1000).toFixed(3);
+                
+                let currentDiscUnit = (i.unitPrice * (i.discountVal / 10)).toFixed(2);
+                let currentDiscPrice = (displayWeightKg * i.unitPrice).toFixed(2);
+                let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
+                let currentDiscValStr = Number(i.discountVal).toFixed(3);
+                
+                let compareBarHtml = '';
+                if (i.discountEnabled) {
+                    compareBarHtml = `
+                    <div class="discount-compare-bar">
+                        <div class="compare-line">
+                            <span>原价: <b>${i.unitPrice}元/kg</b></span>
+                            <span>➔</span>
+                            <span>折后单价: <input type="number" id="p-disc-unit-${i.id}" step="0.01" value="${currentDiscUnit}" style="width:68px; display:inline-block; padding:2px 4px; font-size:13px; text-align:center; background:rgba(30,51,36,0.9); color:#f4a261; border:1px solid #d4a373; border-radius:6px;" oninput="onPriceDiscUnitInput(${i.id}, this.value)"> 元/kg</span>
+                        </div>
+                        <div class="compare-line" style="font-size:11px; color:#b7b7a4; border-top:1px dashed rgba(255,255,255,0.1); padding-top:4px; margin-top:2px;">
+                            <span>原总价: ${i.totalPrice}元</span>
+                            <span>折后总价: <b style="color:#d8f3dc;">${currentDiscPrice}元</b></span>
+                        </div>
+                    </div>`;
+                }
+
+                return `
+                <div class="item">
+                    <button class="btn-del" onclick="del('l_p_v5',${i.id},'p')">×</button>
+                    <div class="discount-box">
+                        <div class="discount-row-top">
+                            <label><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="toggleDiscount('l_p_v5', ${i.id}, this.checked)"> 开启折扣</label>
+                            <div class="discount-inputs">
+                                <span>折扣:</span>
+                                <input type="number" id="p-disc-val-${i.id}" step="0.001" min="0.1" max="9.999" value="${currentDiscValStr}" oninput="onPriceDiscValInput(${i.id}, this.value)">折
+                            </div>
+                        </div>
+                        ${compareBarHtml}
+                    </div>
+                    <div class="item-info">
+                        <div class="item-note">${i.note}</div>
+                        <div class="item-sub">标准总价: ${i.totalPrice} 元 (原单价: ${i.unitPrice} 元/kg)</div>
+                        <span class="item-code" id="p-code-text-${i.id}">${code}</span>
+                    </div>
+                    <canvas id="cp-${i.id}"></canvas>
+                </div>`;
+            }).join('');
+            
+            h.forEach(i => {
+                redrawPriceBarcode(i);
+            });
+        }
+
+        function onPriceDiscUnitInput(id, newDiscUnitStr) {
+            let newDiscUnit = parseFloat(newDiscUnitStr);
+            if (isNaN(newDiscUnit) || newDiscUnit <= 0) return;
+            let h = JSON.parse(localStorage.getItem('l_p_v5') || '[]');
+            let item = h.find(x => x.id === id);
+            if (item && item.unitPrice > 0) {
+                let newDiscount = (newDiscUnit / item.unitPrice) * 10;
+                
+                if (newDiscount >= 0.1 && newDiscount <= 9.999) {
+                    item.discountVal = Math.round(newDiscount * 1000) / 1000;
+                    localStorage.setItem('l_p_v5', JSON.stringify(h));
+                    
+                    let discValInput = document.getElementById(`p-disc-val-${id}`);
+                    if (discValInput) discValInput.value = Number(item.discountVal).toFixed(3);
+                    
+                    redrawPriceBarcode(item);
+                }
+            }
+        }
+
+        function onPriceDiscValInput(id, val) {
+            let num = parseFloat(val);
+            if (isNaN(num) || num <= 0 || num >= 10) return;
+            let h = JSON.parse(localStorage.getItem('l_p_v5') || '[]');
+            let item = h.find(x => x.id === id);
+            if (item) {
+                item.discountVal = num;
+                localStorage.setItem('l_p_v5', JSON.stringify(h));
+                
+                let currentDiscUnit = (item.unitPrice * (num / 10)).toFixed(2);
+                let discUnitInput = document.getElementById(`p-disc-unit-${id}`);
+                if (discUnitInput) discUnitInput.value = currentDiscUnit;
+                
+                redrawPriceBarcode(item);
+            }
+        }
+
+        function redrawPriceBarcode(item) {
+            try {
+                let curGrams = getComputedGrams(item);
+                let code = calculateEAN13("7" + item.sku + curGrams.toString().padStart(5, '0'));
+                let codeTextEl = document.getElementById(`p-code-text-${item.id}`);
+                if (codeTextEl) codeTextEl.innerText = code;
+                JsBarcode(`#cp-${item.id}`, code, {format:"EAN13", width:2.5, height:70, displayValue:false});
+            } catch(e) {}
+        }
+
+        function toggleDiscount(key, id, isChecked) {
+            let h = JSON.parse(localStorage.getItem(key) || '[]');
+            let item = h.find(x => x.id === id);
+            if (item) {
+                item.discountEnabled = isChecked;
+                localStorage.setItem(key, JSON.stringify(h));
+                key === 'l_w_v5' ? renderWeightList() : renderPriceList();
+            }
+        }
+
+        function del(key, id, type) {
+            let h = JSON.parse(localStorage.getItem(key) || '[]').filter(x => x.id !== id);
+            localStorage.setItem(key, JSON.stringify(h));
+            type === 'w' ? renderWeightList() : renderPriceList();
+        }
+    </script>
+</body>
+</html>
