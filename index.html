@@ -118,6 +118,17 @@
         .tab-active-price { background: #d4a373 !important; color: #1e3324 !important; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         .tab-active-member { background: #3a5a40 !important; color: #e9edc9 !important; border: 1px solid #588157; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
 
+        /* 区块通用控制：默认隐藏，激活时显示 */
+        .app-section {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        .app-section.active {
+            display: flex;
+        }
+
         /* 半透明毛玻璃卡片面板 */
         .card { 
             background: var(--card-bg); 
@@ -224,10 +235,6 @@
         }
         .qr-box { display: flex; justify-content: center; margin-top: 10px; }
         .qr-box img, .qr-box canvas { padding: 6px; background: #fff; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); display: block; }
-        
-        #section-weight { display: flex; flex-direction: column; align-items: center; width: 100%; }
-        #section-price { display: none; flex-direction: column; align-items: center; width: 100%; }
-        #section-member { display: none; flex-direction: column; align-items: center; width: 100%; }
     </style>
 </head>
 <body>
@@ -236,7 +243,7 @@
     <div id="fixed-bg"></div>
 
     <div class="top-bar">
-        <div class="version-tag">🌲 综合助手 v4.2</div>
+        <div class="version-tag">🌲 综合助手 v4.3</div>
         <button class="bg-btn" onclick="document.getElementById('bg-file').click()">🖼️ 更换壁纸</button>
         <input type="file" id="bg-file" accept="image/*" style="display:none" onchange="changeBg(this)">
     </div>
@@ -249,7 +256,7 @@
     </div>
 
     <!-- 1. 按重量生成区块 -->
-    <div id="section-weight">
+    <div id="section-weight" class="app-section active">
         <div class="card">
             <h2 style="margin:0 0 15px 0; color:#ccd5ae; font-size:18px; text-align: center; font-weight:700;">录入重量生成条码</h2>
             <div class="input-group">
@@ -270,7 +277,7 @@
     </div>
 
     <!-- 2. 价格反推区块 -->
-    <div id="section-price">
+    <div id="section-price" class="app-section">
         <div class="card">
             <h2 style="margin:0 0 15px 0; color:#d4a373; font-size:18px; text-align: center; font-weight:700;">输入价格反推重量</h2>
             <div class="input-group">
@@ -297,7 +304,7 @@
     </div>
 
     <!-- 3. 会员码生成区块（带自动消减/计数功能） -->
-    <div id="section-member">
+    <div id="section-member" class="app-section">
         <div class="card">
             <h2 style="margin:0 0 15px 0; color:#e9edc9; font-size:18px; text-align: center; font-weight:700;">会员二维码 (满5次自动消失)</h2>
             <div class="input-group">
@@ -349,7 +356,7 @@
             }
         }
 
-        // 切换面板标签
+        // 可靠的面板切换函数
         function switchTab(mode) {
             const sw = document.getElementById('section-weight');
             const sp = document.getElementById('section-price');
@@ -358,17 +365,23 @@
             const tp = document.getElementById('tab-price');
             const tm = document.getElementById('tab-member');
 
-            sw.style.display = 'none'; sp.style.display = 'none'; sm.style.display = 'none';
-            tw.className = 'tab-btn'; tp.className = 'tab-btn'; tm.className = 'tab-btn';
+            // 移除所有激活状态
+            sw.classList.remove('active');
+            sp.classList.remove('active');
+            sm.classList.remove('active');
+            tw.className = 'tab-btn';
+            tp.className = 'tab-btn';
+            tm.className = 'tab-btn';
 
+            // 根据目标激活对应项
             if (mode === 'weight') {
-                sw.style.display = 'flex';
+                sw.classList.add('active');
                 tw.className = 'tab-btn tab-active-weight';
             } else if (mode === 'price') {
-                sp.style.display = 'flex';
+                sp.classList.add('active');
                 tp.className = 'tab-btn tab-active-price';
             } else if (mode === 'member') {
-                sm.style.display = 'flex';
+                sm.classList.add('active');
                 tm.className = 'tab-btn tab-active-member';
             }
         }
@@ -632,5 +645,4 @@
                             <span class="serial-badge">NO.${item.serial}</span>
                             <span class="item-note">${item.note}</span>
                         </div>
-                        <div class="item-phone">${item.content}</div>
-                        <div class="scan-progress">🔄 已扫次数: ${currentCount} / 5 （点击卡片算作
+                        <div cla
