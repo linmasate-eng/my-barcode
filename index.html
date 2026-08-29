@@ -236,10 +236,11 @@
 </head>
 <body>
 
+    <!-- 森林渐变与树叶材质底层 -->
     <div id="fixed-bg"></div>
 
     <div class="top-bar">
-        <div class="version-tag">🌲 综合助手 v4.6</div>
+        <div class="version-tag">🌲 综合助手 v4.4</div>
         <button class="bg-btn" onclick="document.getElementById('bg-file').click()">🖼️ 更换壁纸</button>
         <input type="file" id="bg-file" accept="image/*" style="display:none" onchange="changeBg(this)">
     </div>
@@ -261,17 +262,6 @@
             <div class="input-group">
                 <label>重量 (kg)</label>
                 <input type="number" id="w-weight" step="0.001" placeholder="如: 0.525">
-            </div>
-            <!-- 创建时支持设定折扣和折后公斤 -->
-            <div style="display: flex; gap: 10px;">
-                <div class="input-group" style="flex:1;">
-                    <label>初始折扣</label>
-                    <input type="number" id="w-disc" step="0.1" min="1" max="9.9" value="5.0" oninput="calcWDiscountWeight()">
-                </div>
-                <div class="input-group" style="flex:1;">
-                    <label>折后公斤 (kg)</label>
-                    <input type="number" id="w-disc-weight" step="0.001" placeholder="选填/反算" oninput="calcWDiscountFromWeight()">
-                </div>
             </div>
             <div class="input-group">
                 <label>备注</label>
@@ -303,16 +293,6 @@
             <div class="input-group">
                 <label>总价 (元) <span style="font-size:11px; color:#b7b7a4; font-weight:normal;">(或直接填总价反推公斤)</span></label>
                 <input type="number" id="p-total" step="0.01" placeholder="总额" oninput="calcKgFromTotal()">
-            </div>
-            <div style="display: flex; gap: 10px;">
-                <div class="input-group" style="flex:1;">
-                    <label>初始折扣</label>
-                    <input type="number" id="p-disc" step="0.1" min="1" max="9.9" value="5.0" oninput="calcPDiscountWeight()">
-                </div>
-                <div class="input-group" style="flex:1;">
-                    <label>折后公斤 (kg)</label>
-                    <input type="number" id="p-disc-weight" step="0.001" placeholder="选填/反算" oninput="calcPDiscountFromWeight()">
-                </div>
             </div>
             <div class="input-group">
                 <label>备注</label>
@@ -358,6 +338,7 @@
             }
         }
 
+        // 切换面板标签
         function switchTab(mode) {
             const sw = document.getElementById('section-weight');
             const sp = document.getElementById('section-price');
@@ -376,6 +357,7 @@
             }
         }
 
+        // --- 逻辑1: 重量条码部分 ---
         function calculateEAN13(first12) {
             let sO = 0, sE = 0;
             for (let i = 0; i < 12; i++) {
@@ -386,81 +368,34 @@
             return first12 + ck;
         }
 
-        function getComputedGrams(item) {
-            if (item.discountEnabled && item.discountVal > 0 && item.discountVal <= 10) {
-                return Math.round((item.baseGrams * 10) / item.discountVal);
+        function getComputedGrams(item, currentDiscount, isEnabled) {
+            let baseGrams = item.baseGrams;
+            if (isEnabled && currentDiscount > 0 && currentDiscount <= 10) {
+                let scaledGrams = (baseGrams * 10) / currentDiscount;
+                return Math.round(scaledGrams);
             }
-            return item.baseGrams;
-        }
-
-        // --- 创建页联动：按重量 ---
-        function calcWDiscountWeight() {
-            let w = parseFloat(document.getElementById('w-weight').value);
-            let d = parseFloat(document.getElementById('w-disc').value);
-            if (!isNaN(w) && !isNaN(d) && d > 0 && d <= 10) {
-                let discW = (w * 10) / d;
-                document.getElementById('w-disc-weight').value = discW.toFixed(3);
-            }
-        }
-        function calcWDiscountFromWeight() {
-            let w = parseFloat(document.getElementById('w-weight').value);
-            let dw = parseFloat(document.getElementById('w-disc-weight').value);
-            if (!isNaN(w) && w > 0 && !isNaN(dw) && dw > 0) {
-                let d = (w * 10) / dw;
-                if (d > 0 && d < 10) {
-                    document.getElementById('w-disc').value = d.toFixed(1);
-                }
-            }
-        }
-
-        // --- 创建页联动：按价格 ---
-        function calcPDiscountWeight() {
-            let kg = parseFloat(document.getElementById('p-input-kg').value);
-            let d = parseFloat(document.getElementById('p-disc').value);
-            if (!isNaN(kg) && !isNaN(d) && d > 0 && d <= 10) {
-                let discW = (kg * 10) / d;
-                document.getElementById('p-disc-weight').value = discW.toFixed(3);
-            }
-        }
-        function calcPDiscountFromWeight() {
-            let kg = parseFloat(document.getElementById('p-input-kg').value);
-            let dw = parseFloat(document.getElementById('p-disc-weight').value);
-            if (!isNaN(kg) && kg > 0 && !isNaN(dw) && dw > 0) {
-                let d = (kg * 10) / dw;
-                if (d > 0 && d < 10) {
-                    document.getElementById('p-disc').value = d.toFixed(1);
-                }
-            }
+            return baseGrams;
         }
 
         function saveWeightCode() {
             let s = document.getElementById('w-sku').value;
             let w = parseFloat(document.getElementById('w-weight').value);
-            let discWInput = parseFloat(document.getElementById('w-disc-weight').value);
-            let discVal = parseFloat(document.getElementById('w-disc').value) || 5.0;
             let n = document.getElementById('w-note').value || "未命名";
             if (!s || isNaN(w)) return alert("请输入货号和重量");
             
             let baseGrams = Math.round(w * 1000);
-            
-            if (!isNaN(discWInput) && discWInput > 0) {
-                let targetGrams = Math.round(discWInput * 1000);
-                baseGrams = Math.round((targetGrams * discVal) / 10);
-            }
-
             let h = JSON.parse(localStorage.getItem('l_w_v5') || '[]');
             h.unshift({
                 id: Date.now(),
                 sku: s.padStart(6, '0'),
                 baseGrams: baseGrams,
-                originalWeightStr: (baseGrams / 1000).toFixed(3),
+                originalWeightStr: w,
                 note: n,
-                discountEnabled: true,
-                discountVal: discVal
+                discountEnabled: false,
+                discountVal: 5.0
             });
             localStorage.setItem('l_w_v5', JSON.stringify(h));
             document.getElementById('w-weight').value = "";
-            document.getElementById('w-disc-weight').value = "";
             renderWeightList();
         }
 
@@ -468,9 +403,8 @@
             let h = JSON.parse(localStorage.getItem('l_w_v5') || '[]');
             let l = document.getElementById('list-weight');
             l.innerHTML = h.map(i => {
-                let curGrams = getComputedGrams(i);
+                let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
                 let displayWeightKg = (curGrams / 1000).toFixed(3);
-                let originalKg = (i.baseGrams / 1000).toFixed(3);
                 let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
                 
                 let compareBarHtml = '';
@@ -478,12 +412,12 @@
                     compareBarHtml = `
                     <div class="discount-compare-bar">
                         <div class="compare-line">
-                            <span>基础实重: <b>${originalKg} kg</b></span>
+                            <span>原始重: <b>${i.originalWeightStr} kg</b></span>
                             <span>➔</span>
-                            <span>折后条码重: <input type="number" id="w-disc-kg-${i.id}" step="0.001" value="${displayWeightKg}" style="width:75px; display:inline-block; padding:2px 4px; font-size:13px; text-align:center; background:rgba(30,51,36,0.9); color:#f4a261; border:1px solid #d4a373; border-radius:6px;" oninput="onWeightDiscKgInput(${i.id}, this.value)"> kg</span>
+                            <span>折后条码重: <b>${displayWeightKg} kg</b></span>
                         </div>
-                        <div class="compare-line" style="color:#d4a373; font-size:11px; margin-top:3px;">
-                            <span>💡 修改折后公斤，折扣将独立联动变化</span>
+                        <div class="compare-line" style="color:#d4a373; font-size:11px; margin-top:2px;">
+                            <span>💡 扫码总价依然等于原价（通过放大重量抵消折扣）</span>
                         </div>
                     </div>`;
                 }
@@ -496,118 +430,27 @@
                             <label><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="toggleDiscount('l_w_v5', ${i.id}, this.checked)"> 开启折扣</label>
                             <div class="discount-inputs">
                                 <span>折扣:</span>
-                                <input type="number" id="w-disc-val-${i.id}" step="0.1" min="1" max="9.9" value="${i.discountVal}" oninput="onWeightDiscValInput(${i.id}, this.value)">折
+                                <input type="number" step="0.1" min="1" max="9.9" value="${i.discountVal}" onchange="updateDiscountVal('l_w_v5', ${i.id}, this.value)">折
                             </div>
                         </div>
                         ${compareBarHtml}
                     </div>
                     <div class="item-info">
                         <div class="item-note">${i.note}</div>
-                        <div class="item-sub">原始基准重量: ${originalKg} kg</div>
-                        <span class="item-code" id="w-code-text-${i.id}">${code}</span>
+                        <div class="item-sub">基础录入重量: ${i.originalWeightStr} kg</div>
+                        <span class="item-code">${code}</span>
                     </div>
                     <canvas id="cw-${i.id}"></canvas>
                 </div>`;
             }).join('');
             
             h.forEach(i => {
-                redrawWeightBarcode(i);
+                try {
+                    let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
+                    let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
+                    JsBarcode(`#cw-${i.id}`, code, {format:"EAN13", width:2.5, height:70, displayValue:false});
+                } catch(e) {}
             });
-        }
-
-        // --- 核心修改：每张卡片独立响应，不触发整页重新渲染防止光标丢失 ---
-        function onWeightDiscKgInput(id, newDiscKgStr) {
-            let newDiscKg = parseFloat(newDiscKgStr);
-            if (isNaN(newDiscKg) || newDiscKg <= 0) return;
-            let h = JSON.parse(localStorage.getItem('l_w_v5') || '[]');
-            let item = h.find(x => x.id === id);
-            if (item) {
-                let baseKg = item.baseGrams / 1000;
-                let newDiscount = (baseKg * 10) / newDiscKg;
-                if (newDiscount >= 0.5 && newDiscount <= 9.9) {
-                    item.discountVal = Math.round(newDiscount * 10) / 10;
-                    localStorage.setItem('l_w_v5', JSON.stringify(h));
-                    
-                    // 仅局部更新当前卡片的折扣输入框和条码
-                    let discValInput = document.getElementById(`w-disc-val-${id}`);
-                    if (discValInput) discValInput.value = item.discountVal;
-                    redrawWeightBarcode(item);
-                }
-            }
-        }
-
-        function onWeightDiscValInput(id, val) {
-            let num = parseFloat(val);
-            if (isNaN(num) || num <= 0 || num >= 10) return;
-            let h = JSON.parse(localStorage.getItem('l_w_v5') || '[]');
-            let item = h.find(x => x.id === id);
-            if (item) {
-                item.discountVal = num;
-                localStorage.setItem('l_w_v5', JSON.stringify(h));
-                
-                // 仅局部更新折后公斤输入框和条码
-                let curGrams = getComputedGrams(item);
-                let displayWeightKg = (curGrams / 1000).toFixed(3);
-                let discKgInput = document.getElementById(`w-disc-kg-${id}`);
-                if (discKgInput) discKgInput.value = displayWeightKg;
-                redrawWeightBarcode(item);
-            }
-        }
-
-        function redrawWeightBarcode(item) {
-            try {
-                let curGrams = getComputedGrams(item);
-                let code = calculateEAN13("7" + item.sku + curGrams.toString().padStart(5, '0'));
-                let codeTextEl = document.getElementById(`w-code-text-${item.id}`);
-                if (codeTextEl) codeTextEl.innerText = code;
-                JsBarcode(`#cw-${item.id}`, code, {format:"EAN13", width:2.5, height:70, displayValue:false});
-            } catch(e) {}
-        }
-
-        function onPriceDiscKgInput(id, newDiscKgStr) {
-            let newDiscKg = parseFloat(newDiscKgStr);
-            if (isNaN(newDiscKg) || newDiscKg <= 0) return;
-            let h = JSON.parse(localStorage.getItem('l_p_v5') || '[]');
-            let item = h.find(x => x.id === id);
-            if (item) {
-                let baseKg = item.baseGrams / 1000;
-                let newDiscount = (baseKg * 10) / newDiscKg;
-                if (newDiscount >= 0.5 && newDiscount <= 9.9) {
-                    item.discountVal = Math.round(newDiscount * 10) / 10;
-                    localStorage.setItem('l_p_v5', JSON.stringify(h));
-                    
-                    let discValInput = document.getElementById(`p-disc-val-${id}`);
-                    if (discValInput) discValInput.value = item.discountVal;
-                    redrawPriceBarcode(item);
-                }
-            }
-        }
-
-        function onPriceDiscValInput(id, val) {
-            let num = parseFloat(val);
-            if (isNaN(num) || num <= 0 || num >= 10) return;
-            let h = JSON.parse(localStorage.getItem('l_p_v5') || '[]');
-            let item = h.find(x => x.id === id);
-            if (item) {
-                item.discountVal = num;
-                localStorage.setItem('l_p_v5', JSON.stringify(h));
-                
-                let curGrams = getComputedGrams(item);
-                let displayWeightKg = (curGrams / 1000).toFixed(3);
-                let discKgInput = document.getElementById(`p-disc-kg-${id}`);
-                if (discKgInput) discKgInput.value = displayWeightKg;
-                redrawPriceBarcode(item);
-            }
-        }
-
-        function redrawPriceBarcode(item) {
-            try {
-                let curGrams = getComputedGrams(item);
-                let code = calculateEAN13("7" + item.sku + curGrams.toString().padStart(5, '0'));
-                let codeTextEl = document.getElementById(`p-code-text-${item.id}`);
-                if (codeTextEl) codeTextEl.innerText = code;
-                JsBarcode(`#cp-${item.id}`, code, {format:"EAN13", width:2.5, height:70, displayValue:false});
-            } catch(e) {}
         }
 
         function toggleDiscount(key, id, isChecked) {
@@ -616,18 +459,29 @@
             if (item) {
                 item.discountEnabled = isChecked;
                 localStorage.setItem(key, JSON.stringify(h));
-                key === 'l_w_v5' ? renderWeightList() : renderPriceList();
+                renderWeightList();
             }
         }
 
-        // --- 逻辑2: 价格换算部分 ---
+        function updateDiscountVal(key, id, val) {
+            let num = parseFloat(val);
+            if (isNaN(num) || num <= 0 || num >= 10) return;
+            let h = JSON.parse(localStorage.getItem(key) || '[]');
+            let item = h.find(x => x.id === id);
+            if (item) {
+                item.discountVal = num;
+                localStorage.setItem(key, JSON.stringify(h));
+                renderWeightList();
+            }
+        }
+
+        // --- 逻辑2: 价格与公斤换算反推部分 ---
         function calcTotalFromKg() {
             let unit = parseFloat(document.getElementById('p-unit').value);
             let kg = parseFloat(document.getElementById('p-input-kg').value);
             if (!isNaN(unit) && !isNaN(kg)) {
                 let total = unit * kg;
                 document.getElementById('p-total').value = total.toFixed(2);
-                calcPDiscountWeight();
             }
         }
 
@@ -637,7 +491,6 @@
             if (!isNaN(unit) && unit > 0 && !isNaN(total)) {
                 let kg = total / unit;
                 document.getElementById('p-input-kg').value = kg.toFixed(3);
-                calcPDiscountWeight();
             }
         }
 
@@ -645,18 +498,10 @@
             let s = document.getElementById('p-sku').value;
             let u = parseFloat(document.getElementById('p-unit').value);
             let t = parseFloat(document.getElementById('p-total').value);
-            let discWInput = parseFloat(document.getElementById('p-disc-weight').value);
-            let discVal = parseFloat(document.getElementById('p-disc').value) || 5.0;
             let n = document.getElementById('p-note').value || "未命名";
-            if (!s || isNaN(u) || isNaN(t)) return alert("请完整输入货号、单价和总价");
+            if (!s || isNaN(u) || isNaN(t)) return alert("请完整输入货号、单价和总价（或通过公斤换算）");
             
             let baseGrams = Math.round((t / u) * 1000);
-            
-            if (!isNaN(discWInput) && discWInput > 0) {
-                let targetGrams = Math.round(discWInput * 1000);
-                baseGrams = Math.round((targetGrams * discVal) / 10);
-            }
-
             if (baseGrams > 99999) return alert("重量超出限制");
             
             let sku = s.padStart(6, '0');
@@ -666,14 +511,85 @@
 
             let h = JSON.parse(localStorage.getItem('l_p_v5') || '[]');
             h.unshift({
-                id: Date.now(), sku: sku, baseGrams: baseGrams, totalPrice: t, unitPrice: u, note: n, discountEnabled: true, discountVal: discVal
+                id: Date.now(), sku: sku, baseGrams: baseGrams, totalPrice: t, unitPrice: u, note: n, discountEnabled: false, discountVal: 5.0
             });
             localStorage.setItem('l_p_v5', JSON.stringify(h));
             document.getElementById('p-total').value = "";
             document.getElementById('p-input-kg').value = "";
-            document.getElementById('p-disc-weight').value = "";
             renderPriceList();
         }
 
         function renderPriceList() {
-            let h = JSON.parse(localStorage.getItem('l_p_v5') || 
+            let h = JSON.parse(localStorage.getItem('l_p_v5') || '[]');
+            let l = document.getElementById('list-price');
+            l.innerHTML = h.map(i => {
+                let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
+                let displayWeightKg = (curGrams / 1000).toFixed(3);
+                let originalKg = (i.baseGrams / 1000).toFixed(3);
+                let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
+                
+                let compareBarHtml = '';
+                if (i.discountEnabled) {
+                    compareBarHtml = `
+                    <div class="discount-compare-bar">
+                        <div class="compare-line">
+                            <span>原重: <b>${originalKg}kg</b> ➔ 折后条码重: <b>${displayWeightKg}kg</b></span>
+                        </div>
+                        <div class="compare-line" style="color:#d4a373; font-size:11px; margin-top:2px;">
+                            <span>💡 扫码总价依然为原价: <b>${i.totalPrice}元</b></span>
+                        </div>
+                    </div>`;
+                }
+
+                return `
+                <div class="item">
+                    <button class="btn-del" onclick="del('l_p_v5',${i.id},'p')">×</button>
+                    <div class="discount-box">
+                        <div class="discount-row-top">
+                            <label><input type="checkbox" ${i.discountEnabled ? 'checked' : ''} onchange="togglePriceDiscount(${i.id}, this.checked)"> 开启折扣</label>
+                            <div class="discount-inputs">
+                                <span>折扣:</span>
+                                <input type="number" step="0.1" min="1" max="9.9" value="${i.discountVal}" onchange="updatePriceDiscountVal(${i.id}, this.value)">折
+                            </div>
+                        </div>
+                        ${compareBarHtml}
+                    </div>
+                    <div class="item-info">
+                        <div class="item-note">${i.note}</div>
+                        <div class="item-sub">目标总价: ${i.totalPrice} 元 (单价: ${i.unitPrice} 元/kg，原重: ${originalKg} kg)</div>
+                        <span class="item-code">${code}</span>
+                    </div>
+                    <canvas id="cp-${i.id}"></canvas>
+                </div>`;
+            }).join('');
+            
+            h.forEach(i => {
+                try {
+                    let curGrams = getComputedGrams(i, i.discountVal, i.discountEnabled);
+                    let code = calculateEAN13("7" + i.sku + curGrams.toString().padStart(5, '0'));
+                    JsBarcode(`#cp-${i.id}`, code, {format:"EAN13", width:2.5, height:70, displayValue:false});
+                } catch(e) {}
+            });
+        }
+
+        function togglePriceDiscount(id, isChecked) {
+            let h = JSON.parse(localStorage.getItem('l_p_v5') || '[]');
+            let item = h.find(x => x.id === id);
+            if (item) { item.discountEnabled = isChecked; localStorage.setItem('l_p_v5', JSON.stringify(h)); renderPriceList(); }
+        }
+        function updatePriceDiscountVal(id, val) {
+            let num = parseFloat(val);
+            if (isNaN(num) || num <= 0 || num >= 10) return;
+            let h = JSON.parse(localStorage.getItem('l_p_v5') || '[]');
+            let item = h.find(x => x.id === id);
+            if (item) { item.discountVal = num; localStorage.setItem('l_p_v5', JSON.stringify(h)); renderPriceList(); }
+        }
+
+        function del(key, id, type) {
+            let h = JSON.parse(localStorage.getItem(key) || '[]').filter(x => x.id !== id);
+            localStorage.setItem(key, JSON.stringify(h));
+            type === 'w' ? renderWeightList() : renderPriceList();
+        }
+    </script>
+</body>
+</html>
