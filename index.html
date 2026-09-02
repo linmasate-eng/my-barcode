@@ -386,7 +386,7 @@
                 sku: s.padStart(6, '0'),
                 baseGrams: baseGrams,
                 note: n,
-                discountEnabled: true,
+                discountEnabled: false, // 默认不勾选打折
                 discountVal: 5.000
             });
             localStorage.setItem('l_w_v5', JSON.stringify(h));
@@ -526,7 +526,7 @@
 
             let h = JSON.parse(localStorage.getItem('l_p_v5') || '[]');
             h.unshift({
-                id: Date.now(), sku: sku, baseGrams: baseGrams, totalPrice: t, unitPrice: u, note: n, discountEnabled: true, discountVal: 5.000
+                id: Date.now(), sku: sku, baseGrams: baseGrams, totalPrice: t, unitPrice: u, note: n, discountEnabled: false, discountVal: 5.000 // 默认不勾选打折
             });
             localStorage.setItem('l_p_v5', JSON.stringify(h));
             document.getElementById('p-total').value = "";
